@@ -9,9 +9,11 @@
 
 class  Demo_Contents_Progress {
 
+
+    private $config_data= array();
+
     function __construct()
     {
-        add_action( 'init', array( $this, 'init' ) );
         add_action( 'admin_enqueue_scripts', array( $this, 'scripts' ) );
         add_action( 'wp_ajax_demo_contents__import', array( $this, 'ajax_import' ) );
     }
@@ -21,12 +23,10 @@ class  Demo_Contents_Progress {
      */
     function ajax_import(){
 
+        // Test Import theme Option only
 
-        wp_send_json_success( );
-
-        die();
-
-        $demo_xml_file = DEMO_CONTENT_PATH.'demos/wordpress.xml';
+        $demo_config_file = DEMO_CONTENT_PATH.'demos/onepress/config.json';
+        $demo_xml_file = DEMO_CONTENT_PATH.'demos/onepress/dummy-data.xml';
 
         if ( ! class_exists( 'Merlin_WXR_Parser' ) ) {
             require DEMO_CONTENT_PATH. 'inc/merlin-wp/includes/class-merlin-xml-parser.php' ;
@@ -49,18 +49,15 @@ class  Demo_Contents_Progress {
         $theme      =  isset( $_REQUEST['theme'] ) ? sanitize_text_field( $_REQUEST['theme'] ) : ''; // Theme to import
         $version    =  isset( $_REQUEST['version'] ) ? sanitize_text_field( $_REQUEST['version'] ) : ''; // demo version
 
+        //$transient_key = 'ft_demo_xml_data'.$theme.$version;
+        //$content = get_transient( $transient_key );
 
-
-
-        $transient_key = 'ft_demo_xml_data'.$theme.$version;
-        $content = get_transient( $transient_key );
-
-
+        $content = false;
 
         if ( ! $content ) {
             $parser = new Merlin_WXR_Parser();
             $content = $parser->parse( $demo_xml_file );
-            set_transient( $transient_key, $content, DAY_IN_SECONDS );
+           // set_transient( $transient_key, $content, DAY_IN_SECONDS );
         }
         if ( is_wp_error( $content ) ) {
             wp_send_json_success( 'no_demo_import' );
@@ -95,19 +92,75 @@ class  Demo_Contents_Progress {
                     $importer->importPosts( $content['posts'] );
                 }
                 $importer->remapImportedData();
-                $importer->importEnd();
+                //$importer->importEnd();
 
                 break;
+
+            case 'import_theme_options':
+                global $wp_filesystem;
+                WP_Filesystem();
+                $file_contents = $wp_filesystem->get_contents( $demo_config_file );
+                $option_config = json_decode( $file_contents, true );
+                $this->config_data = $option_config;
+                if ( isset( $option_config['options'] ) ){
+                    $this->importOptions( $option_config['options'] );
+                }
+                print_r( $option_config['pages'] );
+                // Setup Pages
+                $processed_posts = get_transient('_wxr_imported_posts') ? : array();
+                if ( isset( $option_config['pages'] ) ){
+                    foreach ( $option_config['pages']  as $key => $id ) {
+                        $val = isset( $processed_posts[ $id ] )  ? $processed_posts[ $id ] : null ;
+                        update_option( $key, $val );
+                    }
+                }
+
+
+                break;
+
+            case 'import_widgets':
+                global $wp_filesystem;
+                WP_Filesystem();
+                $file_contents = $wp_filesystem->get_contents( $demo_config_file );
+                $option_config = json_decode( $file_contents, true );
+                $this->config_data = $option_config;
+                if ( isset( $option_config['widgets'] ) ){
+                   // print_r( $option_config['widgets'] );
+                    $importer->importWidgets( $option_config['widgets'] );
+                }
+                break;
+
+            case 'import_customize':
+                global $wp_filesystem;
+                WP_Filesystem();
+                $file_contents = $wp_filesystem->get_contents( $demo_config_file );
+                $option_config = json_decode( $file_contents, true );
+                $this->config_data = $option_config;
+                print_r( $option_config['theme_mods'] );
+                if ( isset( $option_config['theme_mods'] ) ){
+
+                    $importer->importThemeOptions( $option_config['theme_mods'] );
+                    if ( isset( $option_config['customizer_keys'] ) ) {
+                        foreach ( ( array ) $option_config['customizer_keys'] as $k=> $list_key ) {
+                            $this->resetup_repeater_page_ids( $k, $list_key );
+                        }
+                    }
+
+                }
+
+                $importer->importEnd();
+                break;
+
         }
     }
 
-    function init(){
-        if ( isset( $_GET['step'] ) ) {
-            $step = $_GET['step'];
-            var_dump( $step );
-            if ( method_exists( $this,  $step ) ){
-                call_user_func_array( array( $this, $step ), array( ) );
-            }
+
+    function importOptions( $options ){
+        if ( empty( $options ) ) {
+            return ;
+        }
+        foreach ( $options as $option_name => $ops ) {
+            update_option( $option_name, $ops );
         }
     }
 
@@ -216,10 +269,87 @@ class  Demo_Contents_Progress {
     }
 
 
-    function install_plugins()
-    {
+    function resetup_repeater_page_ids( $theme_mod_name = null, $list_keys, $processed_posts = array(), $url ='', $option_type = 'theme_mod' ){
+
+        $processed_posts = get_transient('_wxr_imported_posts') ? : array();
+        if ( ! is_array( $processed_posts ) ) {
+            $processed_posts = array();
+        }
+
+        // Setup service
+        $data = get_theme_mod( $theme_mod_name );
+        if (  is_string( $list_keys ) ) {
+            switch( $list_keys ) {
+                case 'media':
+                    $new_data = $processed_posts[ $data ];
+                    if ( $option_type == 'option' ) {
+                        update_option( $theme_mod_name , $new_data );
+                    } else {
+                        set_theme_mod( $theme_mod_name , $new_data );
+                    }
+                    break;
+            }
+            return;
+        }
+
+        if ( is_string( $data ) ) {
+            $data = json_decode( $data, true );
+        }
+        if ( ! is_array( $data ) ) {
+            return false;
+        }
+        if ( ! is_array( $processed_posts ) ) {
+            return false;
+        }
+
+        if ( $url ) {
+            $url = trailingslashit( $this->config_data['home_url'] );
+        }
+
+        $home = home_url('/');
+
+
+        foreach ($list_keys as $key_info) {
+            if ($key_info['type'] == 'post' || $key_info['type'] == 'page') {
+                foreach ($data as $k => $item) {
+                    if (isset($item[$key_info['key']]) && isset ($processed_posts[$item[$key_info['key']]])) {
+                        $data[$k][$key_info['key']] = $processed_posts[$item[$key_info['key']]];
+                    }
+                }
+            } elseif ($key_info['type'] == 'media') {
+
+                $main_key = $key_info['key'];
+                $sub_key_id = 'id';
+                $sub_key_url = 'url';
+                if ($main_key) {
+
+                    foreach ($data as $k => $item) {
+                        if (isset($item[$sub_key_id]) && is_array($item[$sub_key_id])) {
+                            if (isset ($item[$main_key][$sub_key_id])) {
+                                $data[$item][$main_key][$sub_key_id] = $processed_posts[$item[$main_key][$sub_key_id]];
+                            }
+                            if (isset ($item[$main_key][$sub_key_url])) {
+                                $data[$item][$main_key][$sub_key_url] = str_replace($url, $home, $item[$main_key][$sub_key_url]);
+                            }
+                        }
+                    }
+
+                }
+
+
+            }
+        }
+
+
+        if ( $option_type == 'option' ) {
+            update_option( $theme_mod_name , $data );
+        } else {
+            set_theme_mod( $theme_mod_name , $data );
+        }
+
 
     }
+
 }
 
 new Demo_Contents_Progress();

@@ -124,7 +124,9 @@ class Demo_Content_Dashboard {
                             <strong class="panel-title site-title">{{ data.demo_name }}</strong>
                         </div>
                         <# } #>
-
+                        <# if ( data.img ) { #>
+                            <div class="demo-contents--theme-thumbnail">{{{ data.img }}}</div>
+                        <# } #>
                         <div class="demo-contents-import-progress">
 
                             <div class="demo-contents--step demo-contents-install-plugins demo-contents--waiting">
@@ -170,19 +172,19 @@ class Demo_Content_Dashboard {
                             </div>
 
                             <div class="demo-contents--step demo-contents-import-theme-options demo-contents--waiting">
-                                <div class="demo-contents--step-heading">Import theme Options</div>
+                                <div class="demo-contents--step-heading"><?php _e( 'Import theme Options', 'demo-contents' ); ?></div>
                                 <div class="demo-contents--status demo-contents--waiting"></div>
                                 <div class="demo-contents--child-steps"></div>
                             </div>
 
                             <div class="demo-contents--step demo-contents-import-widgets demo-contents--waiting">
-                                <div class="demo-contents--step-heading">Import Widgets</div>
+                                <div class="demo-contents--step-heading"><?php _e( 'Import Widgets', 'demo-contents' ); ?></div>
                                 <div class="demo-contents--status demo-contents--waiting"></div>
                                 <div class="demo-contents--child-steps"></div>
                             </div>
 
                             <div class="demo-contents--step  demo-contents-import-customize demo-contents--waiting">
-                                <div class="demo-contents--step-heading">Import Customize</div>
+                                <div class="demo-contents--step-heading"><?php _e( 'Import Customize', 'demo-contents' ) ?></div>
                                 <div class="demo-contents--status demo-contents--waiting"></div>
                                 <div class="demo-contents--child-steps"></div>
                             </div>
@@ -224,49 +226,35 @@ class Demo_Content_Dashboard {
                 </div>
                 <ul class="filter-links">
                     <li><a href="<?php echo $link_all; ?>" class="<?php echo ( ! $tab ) ? 'current' : ''; ?>"><?php _e( 'All Demos', 'demo-contents' ); ?></a></li>
-                    <li><a href="<?php echo $link_current_theme; ?>"  class="<?php echo ( $tab == 'current_theme' ) ? 'current' : ''; ?>"><?php _e( 'Current Theme', 'demo-contents' ); ?></a></li>
                     <li><a href="<?php echo $link_export; ?>"  class="<?php echo ( $tab == 'export' ) ? 'current' : ''; ?>"><?php _e( 'Export', 'demo-contents' ); ?></a></li>
                 </ul>
                 <form class="search-form"><label class="screen-reader-text" for="wp-filter-search-input"><?php _e( 'Search Demos', 'demo-contents' ); ?></label><input placeholder="Search themes..." aria-describedby="live-search-desc" id="wp-filter-search-input" class="wp-filter-search" type="search"></form>
             </div>
 
-
-
-            <div class="theme-overlay">
-                <div class="theme-overlay">
-                    <div class="theme-wrap wp-clearfix">
-                        <div class="theme-about wp-clearfix">
-                            <div class="theme-screenshots">
-                                <div class="screenshot"><img src="<?php echo esc_url( $this->current_theme->get_screenshot() ); ?>" alt=""></div>
-                            </div>
-                            <div class="theme-info">
-                                <span class="current-label"><?php _e( 'Current Theme', 'demo-contents' ); ?></span>
-                                <h2 class="theme-name"><?php echo $this->current_theme->get( 'Name' ); ?><span class="theme-version">Version: 1.3.3</span></h2>
-                                <p class="theme-author"><?php _e( 'By', 'demo-contents' ); ?> <a href="<?php echo esc_url( $this->current_theme->get( 'AuthorURI' ) ); ?>"><?php echo $this->current_theme->get( 'Author' ); ?></a></p>
-                                <p class="theme-description"><?php echo esc_html(  $this->current_theme->get( 'Description' )  ); ?></p>
-                                <p class="theme-tags"><span><?php _e( 'Tags:', 'demo-contents' ); ?></span> <?php echo esc_html( join( ', ', $this->current_theme->get( 'Tags' ) )  ); ?></p>
-                            </div>
-                        </div>
-                        <div class="theme-actions">
-                            <div class="inactive-theme">
-                                <a href="#"
-                                   data-theme-slug="<?php echo esc_attr( $this->current_theme->get_template() ); ?>"
-                                   data-demo-version=""
-                                   data-name="<?php echo esc_attr( $this->current_theme->get( 'Name' ) ); ?>"
-                                   data-demo-url=""
-                                   class="demo-contents--preview-theme-btn button button-primary"><?php _e( 'Import Demo Content', 'demo-contents' ); ?></a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <?php
-
-            //var_dump( $this->items );
 
             echo '<div class="theme-browser rendered">';
                 echo '<div class="themes wp-clearfix">';
+
+                    ?>
+                    <div class="demo-contents--current-theme theme" tabindex="0" data-slug="<?php echo esc_attr($this->current_theme->get_template()); ?>">
+                        <div class="theme-screenshot">
+                            <img src="<?php echo esc_url( $this->current_theme->get_screenshot() ); ?>" alt="">
+                        </div>
+                        <span class="more-details"><?php _e( 'Current Theme', 'demo-contents' ); ?></span>
+                        <div class="theme-author">By FameThemes</div>
+                        <h2 class="theme-name" id="<?php echo esc_attr($this->current_theme->get_template()); ?>-name"><?php echo esc_html( $this->current_theme->get( 'Name' ) ); ?></h2>
+                        <div class="theme-actions">
+                            <a href="#"
+                               data-theme-slug="<?php echo esc_attr( $this->current_theme->get_template() ); ?>"
+                               data-demo-version=""
+                               data-name="<?php echo esc_attr( $this->current_theme->get( 'Name' ) ); ?>"
+                               data-demo-url=""
+                               class="demo-contents--preview-theme-btn button button-primary"><?php _e( 'Start Import Demo', 'demo-contents' ); ?></a>
+                        </div>
+                    </div>
+                <?php
+
                 foreach (  $this->items as $theme => $item ) {
                     if ( ! $item['__is_current'] ) {
                         ?>
@@ -275,17 +263,24 @@ class Demo_Content_Dashboard {
                                 <img src="<?php echo esc_url($item['_image']) ?>" alt="">
                             </div>
                             <a href="<?php echo esc_url( $item['link'] ); ?>" target="_blank" class="more-details" id="<?php echo esc_attr($theme); ?>-action"><?php _e( 'Theme Details', 'demo-contents' ); ?></a>
-                            <div class="theme-author">By FameThemes</div>
+                            <div class="theme-author"><?php _e( 'By FameThemes', 'demo-content' ); ?></div>
                             <h2 class="theme-name" id="<?php echo esc_attr($theme); ?>-name"><?php echo esc_html($item['title']['rendered']); ?></h2>
                             <div class="theme-actions">
                                 <?php
                                 if ( $item['__is_installed'] ) {
                                     ?>
-                                    <a class="button button-primary customize load-customize hide-if-no-customize" href="#"><?php _e( 'Import', 'demo-contents' ); ?></a>
+                                    <a
+                                        data-theme-slug="<?php echo esc_attr($theme); ?>"
+                                        data-demo-version=""
+                                        data-name="<?php echo esc_html($item['title']['rendered']); ?>"
+                                        data-demo-url=""
+                                        class="demo-contents--preview-theme-btn button button-primary customize"
+                                        href="#"
+                                    ><?php _e( 'View', 'demo-contents' ); ?></a>
                                     <?php
                                 } else {
                                     ?>
-                                    <a class="button button-secondary customize load-customize hide-if-no-customize" href="#"><?php _e( 'Download', 'demo-contents' ); ?></a>
+                                    <a class="button button-secondary customize" target="_blank" href="<?php echo esc_url( $item['link'] ); ?>"><?php _e( 'Download', 'demo-contents' ); ?></a>
                                     <?php
                                 }
                                 ?>
@@ -300,8 +295,6 @@ class Demo_Content_Dashboard {
         echo '</div>';
         ?>
         <?php
-
-        //$this->preview_template();
     }
 }
 

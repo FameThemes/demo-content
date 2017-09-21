@@ -185,8 +185,10 @@ function loading_icon(){
                     version: '' // Current demo version ?
                 },
                 type: 'GET',
-                dataType: 'json',
+                dataType: 'html',
                 success: function( res ){
+
+                    console.log( res );
                     if ( typeof complete_cb === 'function' ) {
                         complete_cb();
                     }
@@ -264,7 +266,7 @@ function loading_icon(){
             var step =  $( '.demo-contents-import-customize' );
             var that = this;
             that.loading_step( step );
-            this.ajax( 'customize', function(){
+            this.ajax( 'import_customize', function (){
                 that.completed_step( step );
             } );
         },
@@ -290,11 +292,13 @@ function loading_icon(){
             $document .on( 'click', '.demo-contents--preview-theme-btn', function( e ){
                 e.preventDefault();
                 var btn = $( this );
+                var theme = btn.closest('.theme');
                 var demoURL         = btn.attr( 'data-demo-url' ) || '';
                 var slug            = btn.attr( 'data-theme-slug' ) || '';
                 var name            = btn.attr( 'data-name' ) || '';
                 var demo_version    = btn.attr( 'data-demo-version' ) || '';
                 var demo_name       = btn.attr( 'data-demo-version-name' ) || '';
+                var img             = $( '.theme-screenshot' ).html();
                 if ( demoURL.indexOf( 'http' ) !== 0 ) {
                     demoURL = 'https://demos.famethemes.com/'+slug+'/';
                 }
@@ -303,8 +307,9 @@ function loading_icon(){
                     name: name,
                     slug: slug,
                     demo_version: demo_version,
-                    demo_name: demo_name,
-                    demoURL: demoURL
+                    demo_name:  demo_name,
+                    demoURL: demoURL,
+                    img: img
                 } );
                 $( 'body' ).append( previewHtml );
                 $( 'body' ).addClass( 'demo-contents-body-viewing' );
@@ -358,7 +363,6 @@ function loading_icon(){
                 that.import_posts();
             } );
 
-
             $document.on( 'demo_contents_import_posts_completed', function(){
                 that.import_theme_options();
             } );
@@ -369,7 +373,9 @@ function loading_icon(){
 
             $document.on( 'demo_contents_import_widgets_completed', function(){
                 that.import_customize();
-                // this is the last step trigger event done.
+            } );
+
+            $document.on( 'demo_contents_import_customize_completed', function(){
                 that.done();
             } );
 
@@ -381,22 +387,29 @@ function loading_icon(){
             if ( demo_contents_params.run == 'run' ) {
                 $document.trigger( 'demo_contents_ready' );
             }
-            // test
+
+            // Toggle Heading
+            $document.on( 'click', '.demo-contents--step', function( e ){
+                e.preventDefault();
+                $( '.demo-contents--child-steps', $( this ) ).toggleClass( 'demo-contents--show' );
+
+            } );
+
 
             $document.on( 'click', '.demo-contents--import-now', function( e ) {
                 e.preventDefault();
-                $document.trigger( 'demo_contents_ready' );
+                if ( $( this ).hasClass( 'updating-message' ) ) {
+                    $( this ).addClass( 'updating-message' );
+                    $document.trigger( 'demo_contents_ready' );
+                }
+
             } );
 
-            /*
             $document.on( 'demo_contents_preview_opened', function(){
-                $document.trigger( 'demo_contents_ajax_failed' );
+               // $document.trigger( 'demo_contents_import_posts_completed' );
             } );
-            */
 
-
-
-            $( '.demo-contents--preview-theme-btn' ).eq( 0 ).click();
+            //$( '.demo-contents--preview-theme-btn' ).eq( 0 ).click();
 
 
         }
