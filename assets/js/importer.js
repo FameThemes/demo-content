@@ -21,6 +21,7 @@ function loading_icon(){
 
 
 // -------------------------------------------------------------------------------
+var working_plugins = {};
 
 (function ( $ ) {
 
@@ -59,7 +60,20 @@ function loading_icon(){
         };
     });
 
+
+    String.prototype.format = function() {
+        var newStr = this, i = 0;
+        while (/%s/.test(newStr)) {
+            newStr = newStr.replace("%s", arguments[i++]);
+        }
+        return newStr;
+    };
+
     var template = repeaterTemplate();
+
+
+
+    console.log( demo_contents_params );
 
     var ftDemoContents  = {
         plugins: {
@@ -67,6 +81,7 @@ function loading_icon(){
             all: {},
             activate: {}
         },
+
         loading_step: function( $element ){
             $element.removeClass( 'demo-contents--waiting demo-contents--running' );
             $element.addClass( 'demo-contents--running' );
@@ -85,39 +100,40 @@ function loading_icon(){
             plugins = _.defaults( plugins,  {
                 install: {},
                 all: {},
-                activate: {},
+                activate: {}
             } );
 
-            that.plugins = plugins;
+            working_plugins = plugins;
+            that.plugins = working_plugins;
 
             var $list_install_plugins = $('.demo-contents-install-plugins');
-            var n = _.size(that.plugins.install);
+            var n = _.size(that.plugins.all);
             if (n > 0) {
                 var $child_steps = $list_install_plugins.find('.demo-contents--child-steps');
-                $.each( that.plugins.install, function ($slug, plugin) {
-                    var $item = $('<div class="demo-contents-child-item demo-contents-plugin-' + $slug + '">Installing ' + plugin.name + '</div>');
+                $.each( that.plugins.all, function ($slug, plugin) {
+                    var msg = plugin.name;
+
+                    if( typeof that.plugins.install[ $slug] !== "undefined" ) {
+                        msg = demo_contents_params.messages.plugin_not_installed.format( plugin.name );
+                    } else {
+                        if( typeof that.plugins.activate[ $slug] !== "undefined" ) {
+                            msg = demo_contents_params.messages.plugin_not_activated.format( plugin.name );
+                        }
+                    }
+
+                    var $item = $('<div data-slug="' + $slug + '" class="demo-contents-child-item dc-unknown-status demo-contents-plugin-' + $slug + '">'+msg+'</div>');
                     $child_steps.append($item);
                     $item.attr('data-plugin', $slug);
                 });
             } else {
-                $list_install_plugins.hide();
+                // $list_install_plugins.hide();
             }
 
-            var $list_active_plugins = $( '.demo-contents-active-plugins' );
-            var $activate_child_steps = $list_active_plugins.find(  '.demo-contents--child-steps' );
-            $.each( that.plugins.all, function ($slug, plugin) {
-                var $item = $(  '<div class="demo-contents-child-item demo-contents-plugin-'+$slug+'">Activating '+plugin.name+'</div>' );
-                $activate_child_steps.append( $item );
-                $item.attr( 'data-plugin', $slug );
-            });
-
-            if ( _.size( that.plugins.install ) == 0 && _.size( that.plugins.activate ) == 0 ) {
-                $list_active_plugins.hide();
-            }
 
         },
         installPlugins: function() {
             var that = this;
+            that.plugins = working_plugins;
             // Install Plugins
             var $list_install_plugins = $( '.demo-contents-install-plugins' );
             that.loading_step( $list_install_plugins );
@@ -125,69 +141,88 @@ function loading_icon(){
             var $child_steps = $list_install_plugins.find(  '.demo-contents--child-steps' );
             var n = _.size( that.plugins.install );
             if ( n > 0 ) {
-                var current = $child_steps.find( '.demo-contents-child-item' ).eq( 0 );
+
                 var callback = function( current ){
                     if ( current.length ) {
                         var slug = current.attr( 'data-plugin' );
-                        var plugin =  that.plugins.install[ slug ];
-                        $.post( plugin.page_url, plugin.args, function (res) {
-                            //console.log(plugin.name + ' Install Completed');
-                            plugin.action = demo_contents_params.action_active_plugin;
-                            that.plugins.activate[ slug ] = plugin;
-                            console.log( plugin.name + ' installed' );
-                            current.html( plugin.name + ' installed'  );
+                        if ( typeof that.plugins.install[ slug ] === "undefined" ) {
                             var next = current.next();
                             callback( next );
-                        }).fail(function() {
-                            console.log( 'Plugins install failed' );
-                            that.completed_step( $list_install_plugins, 'demo_contents_plugins_install_completed' );
-                        });
+                        } else {
+                            var plugin =  that.plugins.install[ slug ];
+                            var msg = demo_contents_params.messages.plugin_installing.format( plugin.name );
+                            console.log( msg );
+                            current.html( msg );
+
+                            $.post( plugin.page_url, plugin.args, function (res) {
+                                //console.log(plugin.name + ' Install Completed');
+                                plugin.action = demo_contents_params.action_active_plugin;
+                                that.plugins.activate[ slug ] = plugin;
+                                var msg = demo_contents_params.messages.plugin_installed.format( plugin.name );
+                                console.log( msg );
+                                current.html( msg );
+                                var next = current.next();
+                                callback( next );
+                            }).fail(function() {
+                                working_plugins = that.plugins;
+                                console.log( 'Plugins install failed' );
+                                $document.trigger( 'demo_contents_plugins_install_completed' );
+                            });
+                        }
                     } else {
-                        console.log( 'Plugin invalid switch to install completed' );
-                        that.completed_step( $list_install_plugins, 'demo_contents_plugins_install_completed' );
+                        working_plugins = that.plugins;
+                        console.log( 'Plugins install completed' );
+                        $document.trigger( 'demo_contents_plugins_install_completed' );
                     }
                 };
+
+                var current = $child_steps.find( '.demo-contents-child-item' ).eq( 0 );
                 callback( current );
             } else {
-                console.log( 'Plugins install completed' );
-                $list_install_plugins.hide();
-                that.completed_step( $list_install_plugins, 'demo_contents_plugins_install_completed' );
+                working_plugins = that.plugins;
+                console.log( 'Plugins install completed - 0' );
+                //$list_install_plugins.hide();
+                $document.trigger( 'demo_contents_plugins_install_completed' );
             }
+
+            // that.completed_step( $list_install_plugins, 'demo_contents_plugins_install_completed' );
 
         },
         activePlugins: function(){
             var that = this;
-            var $list_active_plugins = $( '.demo-contents-active-plugins' );
+            that.plugins = working_plugins;
+            console.log( 'activePlugins', that.plugins );
+            var $list_active_plugins = $( '.demo-contents-install-plugins' );
             that.loading_step( $list_active_plugins );
             var $child_steps = $list_active_plugins.find(  '.demo-contents--child-steps' );
             var n = _.size( that.plugins.activate );
             console.log( 'Being activate plugins....' );
             if (  n > 0 ) {
-
-                $.each( that.plugins.activate, function ($slug, plugin) {
-                    var $item = $('<div class="demo-contents-child-item demo-contents-plugin-' + $slug + '">Activating ' + plugin.name + '</div>');
-                    $child_steps.append($item);
-                    $item.attr('data-plugin', $slug );
-                });
-
                 var callback = function (current) {
                     if (current.length) {
                         var slug = current.attr('data-plugin');
-                        var plugin = that.plugins.activate[slug];
-                        if (typeof  plugin !== "undefined") {
+
+                        if ( typeof that.plugins.activate[ slug ] === "undefined" ) {
+                            var next = current.next();
+                            callback( next );
+                        } else {
+                            var plugin = that.plugins.activate[slug];
+                            var msg = demo_contents_params.messages.plugin_activating.format( plugin.name );
+                            console.log( msg );
+                            current.html( msg );
                             $.post(plugin.page_url, plugin.args, function (res) {
-                                console.log( plugin.name + ' activated' );
-                                current.html(plugin.name + ' activated');
+
+                                var msg = demo_contents_params.messages.plugin_activated.format( plugin.name );
+                                console.log( msg );
+                                current.html( msg );
                                 var next = current.next();
                                 callback(next);
                             }).fail(function() {
                                 console.log( 'Plugins activate failed' );
                                 that.completed_step( $list_active_plugins, 'demo_contents_plugins_active_completed' );
                             });
-                        } else {
-                            console.log( 'Plugin invalid switch to activate completed' );
-                            that.completed_step( $list_active_plugins, 'demo_contents_plugins_active_completed' );
                         }
+
                     } else {
                         console.log(' Activated all plugins');
                         that.completed_step( $list_active_plugins, 'demo_contents_plugins_active_completed' );
@@ -198,7 +233,8 @@ function loading_icon(){
                 callback( current );
 
             } else {
-                $list_active_plugins.hide();
+               // $list_active_plugins.hide();
+                console.log(' Activated all plugins - 0');
                 $list_active_plugins.removeClass('demo-contents--running demo-contents--waiting').addClass('demo-contents--completed');
                 $document.trigger('demo_contents_plugins_active_completed');
             }
@@ -344,6 +380,9 @@ function loading_icon(){
                 $( 'body' ).append( previewHtml );
                 $( 'body' ).addClass( 'demo-contents-body-viewing' );
 
+                // Check if theme is activated
+                //if ( demo_contents_params )
+
                 that.preparing_plugins();
 
                 $document.trigger( 'demo_contents_preview_opened' );
@@ -412,7 +451,6 @@ function loading_icon(){
                 that.failed();
             } );
 
-
             if ( demo_contents_params.run == 'run' ) {
                 $document.trigger( 'demo_contents_ready' );
             }
@@ -421,7 +459,6 @@ function loading_icon(){
             $document.on( 'click', '.demo-contents--step', function( e ){
                 e.preventDefault();
                 $( '.demo-contents--child-steps', $( this ) ).toggleClass( 'demo-contents--show' );
-
             } );
 
 

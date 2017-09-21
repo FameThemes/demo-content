@@ -154,14 +154,8 @@ class Demo_Content_Dashboard {
                         <div class="demo-contents-import-progress">
 
                             <div class="demo-contents--step demo-contents-install-plugins demo-contents--waiting">
-                                <div class="demo-contents--step-heading"><?php _e( 'Install Plugins', 'demo-contents' ); ?></div>
+                                <div class="demo-contents--step-heading"><?php _e( 'Install Recommended Plugins', 'demo-contents' ); ?></div>
                                 <div class="demo-contents--status demo-contents--loading"></div>
-                                <div class="demo-contents--child-steps"></div>
-                            </div>
-
-                            <div class="demo-contents--step demo-contents-active-plugins demo-contents--waiting">
-                                <div class="demo-contents--step-heading"><?php _e( 'Active Plugins', 'demo-contents' ); ?></div>
-                                <div class="demo-contents--status demo-contents--waiting"></div>
                                 <div class="demo-contents--child-steps"></div>
                             </div>
 
