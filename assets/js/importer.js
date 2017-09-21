@@ -156,7 +156,7 @@ var working_plugins = {};
 
                             $.post( plugin.page_url, plugin.args, function (res) {
                                 //console.log(plugin.name + ' Install Completed');
-                                plugin.action = demo_contents_params.action_active_plugin;
+                                plugin.args.action = demo_contents_params.action_active_plugin;
                                 that.plugins.activate[ slug ] = plugin;
                                 var msg = demo_contents_params.messages.plugin_installed.format( plugin.name );
                                 console.log( msg );
@@ -191,6 +191,8 @@ var working_plugins = {};
         activePlugins: function(){
             var that = this;
             that.plugins = working_plugins;
+
+            that.plugins.activate = $.extend({},that.plugins.activate );
             console.log( 'activePlugins', that.plugins );
             var $list_active_plugins = $( '.demo-contents-install-plugins' );
             that.loading_step( $list_active_plugins );
