@@ -62,6 +62,11 @@ function loading_icon(){
     var template = repeaterTemplate();
 
     var ftDemoContents  = {
+        plugins: {
+            install: {},
+            all: {},
+            activate: {}
+        },
         loading_step: function( $element ){
             $element.removeClass( 'demo-contents--waiting demo-contents--running' );
             $element.addClass( 'demo-contents--running' );
@@ -72,25 +77,43 @@ function loading_icon(){
                 $document.trigger( event_trigger );
             }
         },
-        preparing_plugins: function() {
+        preparing_plugins: function( plugins ) {
+            var that = this;
+            if ( typeof plugins === "undefined" ) {
+                plugins = demo_contents_params.plugins;
+            }
+            plugins = _.defaults( plugins,  {
+                install: {},
+                all: {},
+                activate: {},
+            } );
+
+            that.plugins = plugins;
+
             var $list_install_plugins = $('.demo-contents-install-plugins');
-            var n = _.size(demo_contents_params.plugins.install);
+            var n = _.size(that.plugins.install);
             if (n > 0) {
                 var $child_steps = $list_install_plugins.find('.demo-contents--child-steps');
-                $.each(demo_contents_params.plugins.install, function ($slug, plugin) {
+                $.each( that.plugins.install, function ($slug, plugin) {
                     var $item = $('<div class="demo-contents-child-item demo-contents-plugin-' + $slug + '">Installing ' + plugin.name + '</div>');
                     $child_steps.append($item);
                     $item.attr('data-plugin', $slug);
                 });
+            } else {
+                $list_install_plugins.hide();
             }
 
             var $list_active_plugins = $( '.demo-contents-active-plugins' );
             var $activate_child_steps = $list_active_plugins.find(  '.demo-contents--child-steps' );
-            $.each(demo_contents_params.plugins.all, function ($slug, plugin) {
+            $.each( that.plugins.all, function ($slug, plugin) {
                 var $item = $(  '<div class="demo-contents-child-item demo-contents-plugin-'+$slug+'">Activating '+plugin.name+'</div>' );
                 $activate_child_steps.append( $item );
                 $item.attr( 'data-plugin', $slug );
             });
+
+            if ( _.size( that.plugins.install ) == 0 && _.size( that.plugins.activate ) == 0 ) {
+                $list_active_plugins.hide();
+            }
 
         },
         installPlugins: function() {
@@ -100,21 +123,24 @@ function loading_icon(){
             that.loading_step( $list_install_plugins );
             console.log( 'Being installing plugins....' );
             var $child_steps = $list_install_plugins.find(  '.demo-contents--child-steps' );
-            var n = _.size( demo_contents_params.plugins.install );
+            var n = _.size( that.plugins.install );
             if ( n > 0 ) {
                 var current = $child_steps.find( '.demo-contents-child-item' ).eq( 0 );
                 var callback = function( current ){
                     if ( current.length ) {
                         var slug = current.attr( 'data-plugin' );
-                        var plugin =  demo_contents_params.plugins.install[ slug ];
+                        var plugin =  that.plugins.install[ slug ];
                         $.post( plugin.page_url, plugin.args, function (res) {
                             //console.log(plugin.name + ' Install Completed');
                             plugin.action = demo_contents_params.action_active_plugin;
-                            demo_contents_params.plugins.activate[ slug ] = plugin;
+                            that.plugins.activate[ slug ] = plugin;
                             console.log( plugin.name + ' installed' );
                             current.html( plugin.name + ' installed'  );
                             var next = current.next();
                             callback( next );
+                        }).fail(function() {
+                            console.log( 'Plugins install failed' );
+                            that.completed_step( $list_install_plugins, 'demo_contents_plugins_install_completed' );
                         });
                     } else {
                         console.log( 'Plugin invalid switch to install completed' );
@@ -124,6 +150,7 @@ function loading_icon(){
                 callback( current );
             } else {
                 console.log( 'Plugins install completed' );
+                $list_install_plugins.hide();
                 that.completed_step( $list_install_plugins, 'demo_contents_plugins_install_completed' );
             }
 
@@ -133,26 +160,29 @@ function loading_icon(){
             var $list_active_plugins = $( '.demo-contents-active-plugins' );
             that.loading_step( $list_active_plugins );
             var $child_steps = $list_active_plugins.find(  '.demo-contents--child-steps' );
-            var n = _.size( demo_contents_params.plugins.activate );
+            var n = _.size( that.plugins.activate );
             console.log( 'Being activate plugins....' );
             if (  n > 0 ) {
 
-                $.each( demo_contents_params.plugins.activate, function ($slug, plugin) {
+                $.each( that.plugins.activate, function ($slug, plugin) {
                     var $item = $('<div class="demo-contents-child-item demo-contents-plugin-' + $slug + '">Activating ' + plugin.name + '</div>');
                     $child_steps.append($item);
-                    $item.attr('data-plugin', $slug);
+                    $item.attr('data-plugin', $slug );
                 });
 
                 var callback = function (current) {
                     if (current.length) {
                         var slug = current.attr('data-plugin');
-                        var plugin = demo_contents_params.plugins.activate[slug];
+                        var plugin = that.plugins.activate[slug];
                         if (typeof  plugin !== "undefined") {
                             $.post(plugin.page_url, plugin.args, function (res) {
                                 console.log( plugin.name + ' activated' );
                                 current.html(plugin.name + ' activated');
                                 var next = current.next();
                                 callback(next);
+                            }).fail(function() {
+                                console.log( 'Plugins activate failed' );
+                                that.completed_step( $list_active_plugins, 'demo_contents_plugins_active_completed' );
                             });
                         } else {
                             console.log( 'Plugin invalid switch to activate completed' );
@@ -168,10 +198,10 @@ function loading_icon(){
                 callback( current );
 
             } else {
+                $list_active_plugins.hide();
                 $list_active_plugins.removeClass('demo-contents--running demo-contents--waiting').addClass('demo-contents--completed');
                 $document.trigger('demo_contents_plugins_active_completed');
             }
-
 
         },
         ajax: function( doing, complete_cb ){
@@ -298,7 +328,7 @@ function loading_icon(){
                 var name            = btn.attr( 'data-name' ) || '';
                 var demo_version    = btn.attr( 'data-demo-version' ) || '';
                 var demo_name       = btn.attr( 'data-demo-version-name' ) || '';
-                var img             = $( '.theme-screenshot' ).html();
+                var img             = $( '.theme-screenshot', theme ).html();
                 if ( demoURL.indexOf( 'http' ) !== 0 ) {
                     demoURL = 'https://demos.famethemes.com/'+slug+'/';
                 }
@@ -333,7 +363,6 @@ function loading_icon(){
 
             that.preview();
             that.toggle_collapse();
-
 
             $document.on( 'demo_contents_ready', function(){
                 that.installPlugins();
@@ -398,7 +427,7 @@ function loading_icon(){
 
             $document.on( 'click', '.demo-contents--import-now', function( e ) {
                 e.preventDefault();
-                if ( $( this ).hasClass( 'updating-message' ) ) {
+                if ( ! $( this ).hasClass( 'updating-message' ) ) {
                     $( this ).addClass( 'updating-message' );
                     $document.trigger( 'demo_contents_ready' );
                 }

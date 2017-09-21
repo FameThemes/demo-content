@@ -23,6 +23,8 @@ class  Demo_Contents_Progress {
      */
     function ajax_import(){
 
+        wp_send_json_success(); // just for test
+
         // Test Import theme Option only
 
         $demo_config_file = DEMO_CONTENT_PATH.'demos/onepress/config.json';
@@ -171,41 +173,43 @@ class  Demo_Contents_Progress {
         wp_enqueue_script( 'demo-contents', DEMO_CONTENT_URL.'assets/js/importer.js', array( 'jquery', 'underscore' ) );
 
         $run = isset( $_REQUEST['import_now'] ) && $_REQUEST['import_now'] == 1 ? 'run' : 'no';
-        // Localize the javascript.
-        if ( class_exists( 'TGM_Plugin_Activation' ) ) {
 
+        $themes = array();
+        $install_themes = wp_get_themes();
+        foreach (  $install_themes as $slug => $theme ) {
+            $themes[ $slug ] = $theme->get( "Name" );
+        }
+
+        $tgm_url = '';
+        // Localize the javascript.
+        $plugins = array();
+        if ( class_exists( 'TGM_Plugin_Activation' ) ) {
             $this->tgmpa = isset($GLOBALS['tgmpa']) ? $GLOBALS['tgmpa'] : TGM_Plugin_Activation::get_instance();
             $plugins = $this->get_tgmpa_plugins();
-
-            $template_slug = get_option( 'template' );
-            //$theme_slug = get_option( 'stylesheet' );
-
-
-            // Check first if TMGPA is included.
-            wp_localize_script( 'demo-contents', 'demo_contents_params', array(
-                'tgm_plugin_nonce' 	=> array(
-                    'update'  	=> wp_create_nonce( 'tgmpa-update' ),
-                    'install' 	=> wp_create_nonce( 'tgmpa-install' ),
-                ),
-                'tgm_bulk_url' 		    => $this->tgmpa->get_tgmpa_url(),
-                'ajaxurl'      		    => admin_url( 'admin-ajax.php' ),
-                'wpnonce'      		    => wp_create_nonce( 'merlin_nonce' ),
-                'action_install_plugin' => 'tgmpa-bulk-activate',
-                'action_active_plugin'  => 'tgmpa-bulk-activate',
-                'action_update_plugin'  => 'tgmpa-bulk-update',
-                'plugins'               => $plugins,
-                'home'                  => home_url('/'),
-                'btn_done_label'        => __( 'All Done! View Site', 'demo-contents' ),
-                'failed_msg'              => __( 'Import Failed!', 'demo-contents' )
-            ) );
-        } else {
-            // If TMGPA is not included.
-            wp_localize_script( 'demo-contents-importer', 'merlin_params', array(
-                'ajaxurl'      		=> admin_url( 'admin-ajax.php' ),
-                'wpnonce'      		=> wp_create_nonce( 'merlin_nonce' ),
-                'plugins'      		=> wp_create_nonce( 'merlin_nonce' ),
-            ) );
+            $tgm_url = $this->tgmpa->get_tgmpa_url();
         }
+
+        $template_slug  = get_option( 'template' );
+        $theme_slug     = get_option( 'stylesheet' );
+
+        wp_localize_script( 'demo-contents', 'demo_contents_params', array(
+            'tgm_plugin_nonce' 	=> array(
+                'update'  	=> wp_create_nonce( 'tgmpa-update' ),
+                'install' 	=> wp_create_nonce( 'tgmpa-install' ),
+            ),
+            'tgm_bulk_url' 		    => $tgm_url,
+            'ajaxurl'      		    => admin_url( 'admin-ajax.php' ),
+            'wpnonce'      		    => wp_create_nonce( 'merlin_nonce' ),
+            'action_install_plugin' => 'tgmpa-bulk-activate',
+            'action_active_plugin'  => 'tgmpa-bulk-activate',
+            'action_update_plugin'  => 'tgmpa-bulk-update',
+            'plugins'               => $plugins,
+            'home'                  => home_url('/'),
+            'btn_done_label'        => __( 'All Done! View Site', 'demo-contents' ),
+            'failed_msg'            => __( 'Import Failed!', 'demo-contents' ),
+            'installed_themes'      => $themes
+        ) );
+
     }
 
     /**

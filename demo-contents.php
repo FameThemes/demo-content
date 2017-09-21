@@ -10,7 +10,7 @@ Text Domain: demo-contents
 License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 */
 
-include dirname( __FILE__ ).'/inc/class-dashboard.php';
+
 
 define( 'DEMO_CONTENT_URL', trailingslashit ( plugins_url('', __FILE__) ) );
 define( 'DEMO_CONTENT_PATH', trailingslashit( plugin_dir_path( __FILE__) ) );
@@ -26,6 +26,8 @@ class Demo_Contents {
         $this->dir = trailingslashit( plugin_dir_path( __FILE__) );
 
         //require_once $this->dir.'inc/class-demo-content.php';
+
+        include dirname( __FILE__ ).'/inc/class-dashboard.php';
 
         // Example config plugins
         require_once $this->dir.'inc/class-tgm-plugin-activation.php';
