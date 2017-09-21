@@ -6,134 +6,28 @@ window.onbeforeunload = function() {
 };
 
 
+function loading_icon(){
+    var frame = $( '<iframe style="display: none;"></iframe>' );
+    frame.appendTo('body');
+    // Thanks http://jsfiddle.net/KSXkS/1/
+    try { // simply checking may throw in ie8 under ssl or mismatched protocol
+        doc = frame[0].contentDocument ? frame[0].contentDocument : frame[0].document;
+    } catch(err) {
+        doc = frame[0].document;
+    }
+    doc.open();
+    doc.close();
+}
 
-jQuery( document ).ready( function( $ ){
-
-    $( '.ft-demo-import-now').on( 'click', function( e ){
-        e.preventDefault();
-        var btn = $( this);
-        if ( btn.hasClass( 'disabled' ) ) {
-            return ;
-        }
-        // Make sure user want to import
-        var c = confirm( FT_IMPORT_DEMO.confirm_import );
-        if ( ! c ) {
-            return;
-        }
-
-        btn.addClass( 'disabled' );
-        btn.addClass( 'updating-message' );
-
-        var url =  btn.attr( 'href' );
-        var frame = $( '<iframe style="display: none;"></iframe>' );
-        frame.appendTo('body');
-        // Thanks http://jsfiddle.net/KSXkS/1/
-        try { // simply checking may throw in ie8 under ssl or mismatched protocol
-            doc = frame[0].contentDocument ? frame[0].contentDocument : frame[0].document;
-        } catch(err) {
-            doc = frame[0].document;
-        }
-        doc.open();
-
-        // Download url first
-        url = btn.attr( 'data-download' );
-        btn.html( FT_IMPORT_DEMO.downloading );
-        var notice =  $( '.ft-ajax-notice' );
-        notice.html( );
-
-        ft_import_running = true;
-        $.ajax( {
-            url: url,
-            error: function(){
-                var msg = $( '<div class="ft-import-box ft-import-theme"></div>' );
-                btn.removeClass( 'updating-message' );
-                btn.html( FT_IMPORT_DEMO.import_error );
-                msg.addClass( 'ft-import-error').html( '<p>'+FT_IMPORT_DEMO.no_data_found+'</p>' );
-                notice.html( msg );
-                ft_import_running = false;
-                console.log( 'download_error' );
-            },
-            success: function( res ){
-                // btn.removeClass( 'disabled' );
-                //btn.removeClass( 'updating-message' );
-                //doc.close();
-
-                // Import
-                setTimeout( function(){
-                    btn.html( FT_IMPORT_DEMO.importing );
-                    url = btn.attr( 'data-import' );
-                    $.ajax( {
-                        url: url,
-                        dataType: 'html',
-                        error: function( jqXHR, status, errorThrown ){
-
-                            btn.removeClass( 'updating-message' );
-                            doc.close();
-                            btn.html( FT_IMPORT_DEMO.import_error );
-                            btn.removeClass( 'button-primary' );
-                            btn.addClass( 'button-secondary' );
-                            var msg = $( '<div class="ft-import-box ft-import-theme"></div>' );
-                            var err = jqXHR.statusText + ' ('+jqXHR.status+')';
-                            msg.addClass( 'ft-import-error').html( '<p>'+err+'</p>' );
-                            msg.append( '<p>'+FT_IMPORT_DEMO.import_error_msg+'</p>' );
-                            notice.html( msg );
-
-                            ft_import_running = false;
-
-                        },
-                        success: function( res ){
-                            //btn.removeClass( 'disabled' );
-                            btn.removeClass( 'updating-message' );
-                            doc.close();
-                            btn.html( FT_IMPORT_DEMO.imported );
-                            btn.removeClass( 'button-primary' );
-                            btn.addClass( 'button-secondary' );
-
-                            var msg = $( '<div class="ft-import-box ft-import-theme"></div>' );
-                            if ( res.indexOf( 'demo_imported' ) > -1  ) {
-                                res = res.replace(/demo_imported/i, '');
-                                msg.addClass( 'ft-import-success').html( '<p>'+FT_IMPORT_DEMO.demo_imported+'</p>' );
-                                msg.append( '<div class="import_log">'+res+'</div>' );
-                            } else if ( res.indexOf( 'no_data_found' ) > -1 ){
-                                res = res.replace(/no_data_found/i, '');
-                                msg.addClass( 'ft-import-error').html( '<p>'+FT_IMPORT_DEMO.no_data_found+'</p>' );
-                                msg.append( '<div class="import_log">'+res+'</div>' );
-                            } else if ( res.indexOf( 'demo_import_failed' ) > -1 ){
-                                msg.addClass( 'ft-import-error').html( '<p>'+FT_IMPORT_DEMO.demo_import_failed+'</p>' );
-                            } else {
-                                res = res.replace(/demo_imported/i, '');
-                                msg.addClass( 'ft-import-success').html( '<p>'+FT_IMPORT_DEMO.demo_imported+'</p>' );
-                                msg.append( '<div class="import_log">'+res+'</div>' );
-                            }
-
-                            notice.html( msg );
-
-                            ft_import_running = false;
-
-                        }
-                    } );
-                }, 1000 );
-
-            }
-        } );
-
-
-
-    } );
-} );
 
 // -------------------------------------------------------------------------------
 
 (function ( $ ) {
 
-    var ft_demo_content_params = ft_demo_content_params || window.ft_demo_content_params;
+    var demo_contents_params = demo_contents_params || window.demo_contents_params;
 
-    ft_demo_content_params.plugin_install_count = parseInt( ft_demo_content_params.plugin_install_count );
-    ft_demo_content_params.plugin_active_count = parseInt( ft_demo_content_params.plugin_active_count );
-    ft_demo_content_params.plugin_update_count = parseInt( ft_demo_content_params.plugin_update_count );
-
-    if( typeof ft_demo_content_params.plugins.active !== "object" ) {
-        ft_demo_content_params.plugins.active = {};
+    if( typeof demo_contents_params.plugins.activate !== "object" ) {
+        demo_contents_params.plugins.activate = {};
     }
     var $document = $( document );
     var is_importing = false;
@@ -158,7 +52,7 @@ jQuery( document ).ready( function( $ ){
 
         return function (data, tplId ) {
             if ( typeof tplId === "undefined" ) {
-                tplId = '#tmpl-ft-theme-demo-preview';
+                tplId = '#tmpl-demo-contents--preview';
             }
             compiled = _.template(jQuery( tplId ).html(), null, options);
             return compiled(data);
@@ -168,96 +62,124 @@ jQuery( document ).ready( function( $ ){
     var template = repeaterTemplate();
 
     var ftDemoContents  = {
+        loading_step: function( $element ){
+            $element.removeClass( 'demo-contents--waiting demo-contents--running' );
+            $element.addClass( 'demo-contents--running' );
+        },
+        completed_step: function( $element, event_trigger ){
+            $element.removeClass( 'demo-contents--running demo-contents--waiting' ).addClass( 'demo-contents--completed' );
+            if ( typeof event_trigger !== "undefined" ) {
+                $document.trigger( event_trigger );
+            }
+        },
         preparing_plugins: function() {
-            var $list_install_plugins = $('.ft-demo-install-plugins');
-            var n = _.size(ft_demo_content_params.plugins.install);
+            var $list_install_plugins = $('.demo-contents-install-plugins');
+            var n = _.size(demo_contents_params.plugins.install);
             if (n > 0) {
-                var $child_steps = $list_install_plugins.find('.ft-child-steps');
-                $.each(ft_demo_content_params.plugins.install, function ($slug, plugin) {
-                    var $item = $('<div class="ft-child-item ft-plugin-' + $slug + '">Installing ' + plugin.name + '</div>');
+                var $child_steps = $list_install_plugins.find('.demo-contents--child-steps');
+                $.each(demo_contents_params.plugins.install, function ($slug, plugin) {
+                    var $item = $('<div class="demo-contents-child-item demo-contents-plugin-' + $slug + '">Installing ' + plugin.name + '</div>');
                     $child_steps.append($item);
                     $item.attr('data-plugin', $slug);
                 });
-
             }
 
-            var $list_active_plugins = $( '.ft-demo-active-plugins' );
-            var $activate_child_steps = $list_active_plugins.find(  '.ft-child-steps' );
-            $.each(ft_demo_content_params.plugins.all, function ($slug, plugin) {
-                var $item = $(  '<div class="ft-child-item ft-plugin-'+$slug+'">Activating '+plugin.name+'</div>' );
+            var $list_active_plugins = $( '.demo-contents-active-plugins' );
+            var $activate_child_steps = $list_active_plugins.find(  '.demo-contents--child-steps' );
+            $.each(demo_contents_params.plugins.all, function ($slug, plugin) {
+                var $item = $(  '<div class="demo-contents-child-item demo-contents-plugin-'+$slug+'">Activating '+plugin.name+'</div>' );
                 $activate_child_steps.append( $item );
                 $item.attr( 'data-plugin', $slug );
             });
 
         },
         installPlugins: function() {
+            var that = this;
             // Install Plugins
-            var $list_install_plugins = $( '.ft-demo-install-plugins' );
-            var $child_steps = $list_install_plugins.find(  '.ft-child-steps' );
-            var n = _.size( ft_demo_content_params.plugins.install );
+            var $list_install_plugins = $( '.demo-contents-install-plugins' );
+            that.loading_step( $list_install_plugins );
+            console.log( 'Being installing plugins....' );
+            var $child_steps = $list_install_plugins.find(  '.demo-contents--child-steps' );
+            var n = _.size( demo_contents_params.plugins.install );
             if ( n > 0 ) {
-
-                var current = $child_steps.find( '.ft-child-item' ).eq( 0 );
-
+                var current = $child_steps.find( '.demo-contents-child-item' ).eq( 0 );
                 var callback = function( current ){
                     if ( current.length ) {
                         var slug = current.attr( 'data-plugin' );
-                        var plugin =  ft_demo_content_params.plugins.install[ slug ];
+                        var plugin =  demo_contents_params.plugins.install[ slug ];
                         $.post( plugin.page_url, plugin.args, function (res) {
                             //console.log(plugin.name + ' Install Completed');
-                            plugin.action = ft_demo_content_params.action_active_plugin;
-                            ft_demo_content_params.plugins.activate[ slug ] = plugin;
-                            current.html( plugin.name + 'Installed'  );
+                            plugin.action = demo_contents_params.action_active_plugin;
+                            demo_contents_params.plugins.activate[ slug ] = plugin;
+                            console.log( plugin.name + ' installed' );
+                            current.html( plugin.name + ' installed'  );
                             var next = current.next();
                             callback( next );
                         });
                     } else {
-                        console.log( 'Plugins install completed' );
-                        $list_install_plugins.addClass( 'ft-step-completed' );
-                        $document.trigger( 'ft_demo_content_plugins_install_completed' );
+                        console.log( 'Plugin invalid switch to install completed' );
+                        that.completed_step( $list_install_plugins, 'demo_contents_plugins_install_completed' );
                     }
                 };
                 callback( current );
             } else {
-                $list_install_plugins.addClass( 'ft-step-completed' );
-                $document.trigger( 'ft_demo_content_plugins_install_completed' );
+                console.log( 'Plugins install completed' );
+                that.completed_step( $list_install_plugins, 'demo_contents_plugins_install_completed' );
             }
 
         },
         activePlugins: function(){
-            var $list_active_plugins = $( '.ft-demo-active-plugins' );
-            var $child_steps = $list_active_plugins.find(  '.ft-child-steps' );
-            $.each(ft_demo_content_params.plugins.activate, function ($slug, plugin) {
-                var $item = $(  '<div class="ft-child-item ft-plugin-'+$slug+'">Activating '+plugin.name+'</div>' );
-                $child_steps.append( $item );
-                $item.attr( 'data-plugin', $slug );
-            });
+            var that = this;
+            var $list_active_plugins = $( '.demo-contents-active-plugins' );
+            that.loading_step( $list_active_plugins );
+            var $child_steps = $list_active_plugins.find(  '.demo-contents--child-steps' );
+            var n = _.size( demo_contents_params.plugins.activate );
+            console.log( 'Being activate plugins....' );
+            if (  n > 0 ) {
 
-            var callback = function( current ){
-                if ( current.length ) {
-                    var slug = current.attr( 'data-plugin' );
-                    var plugin =  ft_demo_content_params.plugins.activate[ slug ];
-                    $.post( plugin.page_url, plugin.args, function (res) {
-                        current.html( plugin.name + ' Activated' );
-                        var next = current.next();
-                        callback( next );
-                    });
-                } else {
-                    console.log( ' Activate all plugins' );
-                    $list_active_plugins.addClass( 'ft-step-completed' );
-                    $document.trigger( 'ft_demo_content_plugins_active_completed' );
-                }
-            };
+                $.each( demo_contents_params.plugins.activate, function ($slug, plugin) {
+                    var $item = $('<div class="demo-contents-child-item demo-contents-plugin-' + $slug + '">Activating ' + plugin.name + '</div>');
+                    $child_steps.append($item);
+                    $item.attr('data-plugin', $slug);
+                });
 
-            var current = $child_steps.find( '.ft-child-item' ).eq( 0 );
-            callback( current );
+                var callback = function (current) {
+                    if (current.length) {
+                        var slug = current.attr('data-plugin');
+                        var plugin = demo_contents_params.plugins.activate[slug];
+                        if (typeof  plugin !== "undefined") {
+                            $.post(plugin.page_url, plugin.args, function (res) {
+                                console.log( plugin.name + ' activated' );
+                                current.html(plugin.name + ' activated');
+                                var next = current.next();
+                                callback(next);
+                            });
+                        } else {
+                            console.log( 'Plugin invalid switch to activate completed' );
+                            that.completed_step( $list_active_plugins, 'demo_contents_plugins_active_completed' );
+                        }
+                    } else {
+                        console.log(' Activated all plugins');
+                        that.completed_step( $list_active_plugins, 'demo_contents_plugins_active_completed' );
+                    }
+                };
+
+                var current = $child_steps.find( '.demo-contents-child-item' ).eq( 0 );
+                callback( current );
+
+            } else {
+                $list_active_plugins.removeClass('demo-contents--running demo-contents--waiting').addClass('demo-contents--completed');
+                $document.trigger('demo_contents_plugins_active_completed');
+            }
+
+
         },
         ajax: function( doing, complete_cb ){
-            console.log( 'Doing....', doing );
+            console.log( 'Being....', doing );
             $.ajax( {
-                url: ft_demo_content_params.ajaxurl,
+                url: demo_contents_params.ajaxurl,
                 data: {
-                    action: 'ft_demo_import',
+                    action: 'demo_contents__import',
                     doing: doing,
                     theme: '', // Import demo for theme ?
                     version: '' // Current demo version ?
@@ -268,60 +190,104 @@ jQuery( document ).ready( function( $ ){
                     if ( typeof complete_cb === 'function' ) {
                         complete_cb();
                     }
-                    console.log( 'Done Step: ', doing );
-                    $document.trigger( 'ft_demo_content_'+doing+'_completed' );
+                    console.log( 'Completed: ', doing );
+                    $document.trigger( 'demo_contents_'+doing+'_completed' );
                 },
                 fail: function(){
-                    $document.trigger( 'ft_demo_content_'+doing+'_fail' );
+                    console.log( 'Failed: ', doing );
+                    $document.trigger( 'demo_contents_'+doing+'_failed' );
+                    $document.trigger( 'demo_contents_ajax_failed', [ doing ] );
                 }
 
             } )
         },
         import_users: function(){
-            var step =  $( '.ft-demo-import-users' );
-            step.addClass( 'ft-step-running' );
+            var step =  $( '.demo-contents-import-users' );
+            var that = this;
+            that.loading_step( step );
             this.ajax( 'import_users', function(){
-                step.removeClass( 'ft-step-running' ).addClass( 'ft-step-completed' );
+                that.completed_step( step );
             } );
         },
         import_categories: function(){
-            var step =  $( '.ft-demo-import-categories' );
-            step.addClass( 'ft-step-running' );
+            var step =  $( '.demo-contents-import-categories' );
+            var that = this;
+            that.loading_step( step );
             this.ajax(  'import_categories', function(){
-                step.removeClass( 'ft-step-running' ).addClass( 'ft-step-completed' );
+                that.completed_step( step );
             } );
         },
         import_tags: function(){
-            var step =  $( '.ft-demo-import-tags' );
-            step.addClass( 'ft-step-running' );
+            var step =  $( '.demo-contents-import-tags' );
+            var that = this;
+            that.loading_step( step );
             this.ajax(  'import_tags', function(){
-                step.removeClass( 'ft-step-running' ).addClass( 'ft-step-completed' );
+                that.completed_step( step );
             } );
         },
         import_taxs: function(){
-            var step =  $( '.ft-demo-import-taxs' );
-            step.addClass( 'ft-step-running' );
+            var step =  $( '.demo-contents-import-taxs' );
+            var that = this;
+            that.loading_step( step );
             this.ajax(  'import_taxs', function(){
-                step.removeClass( 'ft-step-running' ).addClass( 'ft-step-completed' );
+                that.completed_step( step );
             } );
         },
         import_posts: function(){
-            var step =  $( '.ft-demo-import-posts' );
-            step.addClass( 'ft-step-running' );
+            var step =  $( '.demo-contents-import-posts' );
+            var that = this;
+            that.loading_step( step );
             this.ajax( 'import_posts', function(){
-                step.removeClass( 'ft-step-running' ).addClass( 'ft-step-completed' );
+                that.completed_step( step );
+            } );
+        },
+
+        import_theme_options: function(){
+            var step =  $( '.demo-contents-import-theme-options' );
+            var that = this;
+            that.loading_step( step );
+            this.ajax( 'import_theme_options', function(){
+                that.completed_step( step );
+            } );
+        },
+
+        import_widgets: function(){
+            var step =  $( '.demo-contents-import-widgets' );
+            var that = this;
+            that.loading_step( step );
+            this.ajax( 'import_widgets', function(){
+                that.completed_step( step );
+            } );
+        },
+
+        import_customize: function(){
+            var step =  $( '.demo-contents-import-customize' );
+            var that = this;
+            that.loading_step( step );
+            this.ajax( 'customize', function(){
+                that.completed_step( step );
             } );
         },
 
         toggle_collapse: function(){
-            $document .on( 'click', '.ft-collapse-sidebar', function( e ){
-                $( '#ft-theme-demo-preview' ).toggleClass('ft-preview-collapse');
+            $document .on( 'click', '.demo-contents-collapse-sidebar', function( e ){
+                $( '#demo-contents--preview' ).toggleClass('ft-preview-collapse');
             } );
+        },
+
+        done: function(){
+            console.log( 'All done' );
+            $( '.demo-contents--import-now' ).replaceWith( '<a href="'+demo_contents_params.home+'" class="button button-primary">'+demo_contents_params.btn_done_label+'</a>' );
+        },
+
+        failed: function(){
+            console.log( 'Import failed' );
+            $( '.demo-contents--import-now' ).replaceWith( '<span class="button button-secondary">'+demo_contents_params.failed_msg+'</span>' );
         },
 
         preview: function(){
             var that = this;
-            $document .on( 'click', '.ft-preview-theme-btn', function( e ){
+            $document .on( 'click', '.demo-contents--preview-theme-btn', function( e ){
                 e.preventDefault();
                 var btn = $( this );
                 var demoURL         = btn.attr( 'data-demo-url' ) || '';
@@ -332,7 +298,7 @@ jQuery( document ).ready( function( $ ){
                 if ( demoURL.indexOf( 'http' ) !== 0 ) {
                     demoURL = 'https://demos.famethemes.com/'+slug+'/';
                 }
-                $( '#ft-theme-demo-preview' ).remove();
+                $( '#demo-contents--preview' ).remove();
                 var previewHtml = template( {
                     name: name,
                     slug: slug,
@@ -341,18 +307,19 @@ jQuery( document ).ready( function( $ ){
                     demoURL: demoURL
                 } );
                 $( 'body' ).append( previewHtml );
-                $( 'body' ).addClass( 'ft-demo-body-viewing' );
+                $( 'body' ).addClass( 'demo-contents-body-viewing' );
 
                 that.preparing_plugins();
 
+                $document.trigger( 'demo_contents_preview_opened' );
+
             } );
 
-            $document.on( 'click', '.ft-demo-close', function( e ) {
+            $document.on( 'click', '.demo-contents-close', function( e ) {
                 e.preventDefault();
-                $( this ).closest('#ft-theme-demo-preview').remove();
-                $( 'body' ).removeClass( 'ft-demo-body-viewing' );
+                $( this ).closest('#demo-contents--preview').remove();
+                $( 'body' ).removeClass( 'demo-contents-body-viewing' );
             } );
-
 
         },
 
@@ -363,40 +330,73 @@ jQuery( document ).ready( function( $ ){
             that.toggle_collapse();
 
 
-            $document.on( 'ft_demo_content_ready', function(){
+            $document.on( 'demo_contents_ready', function(){
                 that.installPlugins();
             } );
 
-            $document.on( 'ft_demo_content_plugins_install_completed', function(){
+            $document.on( 'demo_contents_plugins_install_completed', function(){
                 that.activePlugins();
             } );
 
-            $document.on( 'ft_demo_content_plugins_active_completed', function(){
+            $document.on( 'demo_contents_plugins_active_completed', function(){
                 that.import_users();
             } );
 
-            $document.on( 'ft_demo_content_import_users_completed', function(){
+            $document.on( 'demo_contents_import_users_completed', function(){
                 that.import_categories();
             } );
 
-            $document.on( 'ft_demo_content_import_categories_completed', function(){
+            $document.on( 'demo_contents_import_categories_completed', function(){
                 that.import_tags();
             } );
 
-            $document.on( 'ft_demo_content_import_tags_completed', function(){
+            $document.on( 'demo_contents_import_tags_completed', function(){
                 that.import_taxs();
             } );
 
-            $document.on( 'ft_demo_content_import_taxs_completed', function(){
+            $document.on( 'demo_contents_import_taxs_completed', function(){
                 that.import_posts();
             } );
 
-            if ( ft_demo_content_params.run == 'run' ) {
-                $document.trigger( 'ft_demo_content_ready' );
+
+            $document.on( 'demo_contents_import_posts_completed', function(){
+                that.import_theme_options();
+            } );
+
+            $document.on( 'demo_contents_import_theme_options_completed', function(){
+                that.import_widgets();
+            } );
+
+            $document.on( 'demo_contents_import_widgets_completed', function(){
+                that.import_customize();
+                // this is the last step trigger event done.
+                that.done();
+            } );
+
+            $document.on( 'demo_contents_ajax_failed', function(){
+                that.failed();
+            } );
+
+
+            if ( demo_contents_params.run == 'run' ) {
+                $document.trigger( 'demo_contents_ready' );
             }
             // test
 
-            $( '.ft-preview-theme-btn' ).eq( 0 ).click();
+            $document.on( 'click', '.demo-contents--import-now', function( e ) {
+                e.preventDefault();
+                $document.trigger( 'demo_contents_ready' );
+            } );
+
+            /*
+            $document.on( 'demo_contents_preview_opened', function(){
+                $document.trigger( 'demo_contents_ajax_failed' );
+            } );
+            */
+
+
+
+            $( '.demo-contents--preview-theme-btn' ).eq( 0 ).click();
 
 
         }

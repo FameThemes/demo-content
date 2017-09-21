@@ -13,13 +13,19 @@ class  Demo_Contents_Progress {
     {
         add_action( 'init', array( $this, 'init' ) );
         add_action( 'admin_enqueue_scripts', array( $this, 'scripts' ) );
-        add_action( 'wp_ajax_ft_demo_import', array( $this, 'ajax_import' ) );
+        add_action( 'wp_ajax_demo_contents__import', array( $this, 'ajax_import' ) );
     }
 
     /**
      * @see https://github.com/devinsays/edd-theme-updater/blob/master/updater/theme-updater.php
      */
     function ajax_import(){
+
+
+        wp_send_json_success( );
+
+        die();
+
         $demo_xml_file = DEMO_CONTENT_PATH.'demos/wordpress.xml';
 
         if ( ! class_exists( 'Merlin_WXR_Parser' ) ) {
@@ -31,13 +37,13 @@ class  Demo_Contents_Progress {
         }
 
         if ( ! current_user_can( 'import' ) ) {
-            wp_send_json_error( __( "You have not permissions to import.", 'ftdi' ) );
+            wp_send_json_error( __( "You have not permissions to import.", 'demo-contents' ) );
         }
         $importer = new Merlin_Importer();
         //$importer->import( $demo_xml_file );
         $doing = isset( $_REQUEST['doing'] ) ? sanitize_text_field( $_REQUEST['doing'] ) : '';
         if ( ! $doing ) {
-            wp_send_json_error( __( "No actions to do", 'ftdi' ) );
+            wp_send_json_error( __( "No actions to do", 'demo-contents' ) );
         }
 
         $theme      =  isset( $_REQUEST['theme'] ) ? sanitize_text_field( $_REQUEST['theme'] ) : ''; // Theme to import
@@ -123,7 +129,7 @@ class  Demo_Contents_Progress {
 
 
             // Check first if TMGPA is included.
-            wp_localize_script( 'demo-contents', 'ft_demo_content_params', array(
+            wp_localize_script( 'demo-contents', 'demo_contents_params', array(
                 'tgm_plugin_nonce' 	=> array(
                     'update'  	=> wp_create_nonce( 'tgmpa-update' ),
                     'install' 	=> wp_create_nonce( 'tgmpa-install' ),
@@ -135,11 +141,13 @@ class  Demo_Contents_Progress {
                 'action_active_plugin'  => 'tgmpa-bulk-activate',
                 'action_update_plugin'  => 'tgmpa-bulk-update',
                 'plugins'               => $plugins,
-                'run'                   => $run,
+                'home'                  => home_url('/'),
+                'btn_done_label'        => __( 'All Done! View Site', 'demo-contents' ),
+                'failed_msg'              => __( 'Import Failed!', 'demo-contents' )
             ) );
         } else {
             // If TMGPA is not included.
-            wp_localize_script( 'ft-demo-importer', 'merlin_params', array(
+            wp_localize_script( 'demo-contents-importer', 'merlin_params', array(
                 'ajaxurl'      		=> admin_url( 'admin-ajax.php' ),
                 'wpnonce'      		=> wp_create_nonce( 'merlin_nonce' ),
                 'plugins'      		=> wp_create_nonce( 'merlin_nonce' ),

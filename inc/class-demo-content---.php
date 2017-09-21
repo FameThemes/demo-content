@@ -322,7 +322,7 @@ class Demo_Contents {
         }
 
         if( $importer_error ){
-             esc_html_e( "Error load importer.", 'ftdi');
+             esc_html_e( "Error load importer.", 'demo-contents');
         } else {
             $wp_import = new WP_Import();
             $wp_import->fetch_attachments = true; // download attachment

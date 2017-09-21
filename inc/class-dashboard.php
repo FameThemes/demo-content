@@ -18,7 +18,7 @@ class Demo_Content_Dashboard {
 
 
     function add_menu() {
-        add_management_page( __( 'Demo Content', 'ftdi' ), __( 'Demo Content', 'ftdi' ), 'manage_options', $this->page_slug, array( $this, 'dashboard' ) );
+        add_management_page( __( 'Demo Content', 'demo-contents' ), __( 'Demo Content', 'demo-contents' ), 'manage_options', $this->page_slug, array( $this, 'dashboard' ) );
     }
 
     function get_items(){
@@ -37,14 +37,14 @@ class Demo_Content_Dashboard {
         }
         $r = wp_remote_get( $this->api_url );
         if ( wp_remote_retrieve_response_code( $r ) != 200 ) {
-            $this->errors['COULD_NOT_CONNECT'] = __( 'Could not connect to FameThemes server.', 'ftdi' );
+            $this->errors['COULD_NOT_CONNECT'] = __( 'Could not connect to FameThemes server.', 'demo-contents' );
             return array();
         }
 
         $items = wp_remote_retrieve_body( $r );
         $items = json_decode( $items, true );
         if ( ! is_array( $items )  || empty( $items ) ) {
-            $this->errors['COULD_NOT_LOAD_ITEMS'] = __( 'Could not load themes.', 'ftdi' );
+            $this->errors['COULD_NOT_LOAD_ITEMS'] = __( 'Could not load themes.', 'demo-contents' );
             return array();
         }
 
@@ -102,100 +102,100 @@ class Demo_Content_Dashboard {
 
     function  preview_template(){
         ?>
-        <script id="tmpl-ft-theme-demo-preview" type="text/html">
-            <div id="ft-theme-demo-preview">
+        <script id="tmpl-demo-contents--preview" type="text/html">
+            <div id="demo-contents--preview">
 
-                  <span type="button" class="ft-collapse-sidebar button" aria-expanded="true">
+                  <span type="button" class="demo-contents-collapse-sidebar button" aria-expanded="true">
                         <span class="collapse-sidebar-arrow"></span>
-                        <span class="collapse-sidebar-label"><?php _e( 'Collapse', 'ftdi' ); ?></span>
+                        <span class="collapse-sidebar-label"><?php _e( 'Collapse', 'demo-contents' ); ?></span>
                     </span>
 
-                <div id="ft-demo-sidebar">
-                    <span class="ft-demo-close"><span class="screen-reader-text"><?php _e( 'Close', 'fdi' ); ?></span></span>
+                <div id="demo-contents-sidebar">
+                    <span class="demo-contents-close"><span class="screen-reader-text"><?php _e( 'Close', 'fdi' ); ?></span></span>
 
-                    <div id="ft-demo-sidebar-topbar">
+                    <div id="demo-contents-sidebar-topbar">
                         <span class="ft-theme-name">{{ data.name }}</span>
                     </div>
 
-                    <div id="ft-demo-sidebar-content">
+                    <div id="demo-contents-sidebar-content">
                         <# if ( data.demo_version ) { #>
-                        <div id="ft-demo-sidebar-heading">
-                            <span><?php _e( "Your're viewing demo", 'ftdi' ); ?></span>
+                        <div id="demo-contents-sidebar-heading">
+                            <span><?php _e( "Your're viewing demo", 'demo-contents' ); ?></span>
                             <strong class="panel-title site-title">{{ data.demo_name }}</strong>
                         </div>
                         <# } #>
 
-                        <div class="ft-demo-import-progress">
+                        <div class="demo-contents-import-progress">
 
-                            <div class="ft-step ft-demo-install-plugins">
-                                <div class="ft-step-heading"><?php _e( 'Install Plugins', 'ftdi' ); ?></div>
-                                <div class="ft-status ft-loading"></div>
-                                <div class="ft-child-steps"></div>
+                            <div class="demo-contents--step demo-contents-install-plugins demo-contents--waiting">
+                                <div class="demo-contents--step-heading"><?php _e( 'Install Plugins', 'demo-contents' ); ?></div>
+                                <div class="demo-contents--status demo-contents--loading"></div>
+                                <div class="demo-contents--child-steps"></div>
                             </div>
 
-                            <div class="ft-step ft-demo-active-plugins">
-                                <div class="ft-step-heading"><?php _e( 'Active Plugins', 'ftdi' ); ?></div>
-                                <div class="ft-status ft-waiting"></div>
-                                <div class="ft-child-steps"></div>
+                            <div class="demo-contents--step demo-contents-active-plugins demo-contents--waiting">
+                                <div class="demo-contents--step-heading"><?php _e( 'Active Plugins', 'demo-contents' ); ?></div>
+                                <div class="demo-contents--status demo-contents--waiting"></div>
+                                <div class="demo-contents--child-steps"></div>
                             </div>
 
-                            <div class="ft-step ft-demo-import-users">
-                                <div class="ft-step-heading"><?php _e( 'Import Users', 'ftdi' ); ?></div>
-                                <div class="ft-status ft-waiting"></div>
-                                <div class="ft-child-steps"></div>
+                            <div class="demo-contents--step demo-contents-import-users demo-contents--waiting">
+                                <div class="demo-contents--step-heading"><?php _e( 'Import Users', 'demo-contents' ); ?></div>
+                                <div class="demo-contents--status demo-contents--waiting"></div>
+                                <div class="demo-contents--child-steps"></div>
                             </div>
 
-                            <div class="ft-step ft-demo-import-categories">
-                                <div class="ft-step-heading"><?php _e( 'Import Categories', 'ftdi' ); ?></div>
-                                <div class="ft-status ft-completed"></div>
-                                <div class="ft-child-steps"></div>
+                            <div class="demo-contents--step demo-contents-import-categories demo-contents--waiting">
+                                <div class="demo-contents--step-heading"><?php _e( 'Import Categories', 'demo-contents' ); ?></div>
+                                <div class="demo-contents--status demo-contents--completed"></div>
+                                <div class="demo-contents--child-steps"></div>
                             </div>
 
-                            <div class="ft-step ft-demo-import-tags">
-                                <div class="ft-step-heading"><?php _e( 'Import Tags', 'ftdi' ); ?></div>
-                                <div class="ft-status ft-completed"></div>
-                                <div class="ft-child-steps"></div>
+                            <div class="demo-contents--step demo-contents-import-tags demo-contents--waiting">
+                                <div class="demo-contents--step-heading"><?php _e( 'Import Tags', 'demo-contents' ); ?></div>
+                                <div class="demo-contents--status demo-contents--completed"></div>
+                                <div class="demo-contents--child-steps"></div>
                             </div>
 
-                            <div class="ft-step ft-demo-import-taxs">
-                                <div class="ft-step-heading"><?php _e( 'Import Taxonomies', 'ftdi' ); ?></div>
-                                <div class="ft-status ft-waiting"></div>
-                                <div class="ft-child-steps"></div>
+                            <div class="demo-contents--step demo-contents-import-taxs demo-contents--waiting">
+                                <div class="demo-contents--step-heading"><?php _e( 'Import Taxonomies', 'demo-contents' ); ?></div>
+                                <div class="demo-contents--status demo-contents--waiting"></div>
+                                <div class="demo-contents--child-steps"></div>
                             </div>
 
-                            <div class="ft-step  ft-demo-import-posts">
-                                <div class="ft-step-heading"><?php _e( 'Import Posts', 'ftdi' ); ?></div>
-                                <div class="ft-status ft-waiting"></div>
-                                <div class="ft-child-steps"></div>
+                            <div class="demo-contents--step  demo-contents-import-posts demo-contents--waiting">
+                                <div class="demo-contents--step-heading"><?php _e( 'Import Posts', 'demo-contents' ); ?></div>
+                                <div class="demo-contents--status demo-contents--waiting"></div>
+                                <div class="demo-contents--child-steps"></div>
                             </div>
 
-                            <div class="ft-step ft-demo-import-theme-options">
-                                <div class="ft-step-heading">Import theme Options</div>
-                                <div class="ft-status ft-waiting"></div>
-                                <div class="ft-child-steps"></div>
+                            <div class="demo-contents--step demo-contents-import-theme-options demo-contents--waiting">
+                                <div class="demo-contents--step-heading">Import theme Options</div>
+                                <div class="demo-contents--status demo-contents--waiting"></div>
+                                <div class="demo-contents--child-steps"></div>
                             </div>
 
-                            <div class="ft-step ft-demo-import-widgets">
-                                <div class="ft-step-heading">Import Widgets</div>
-                                <div class="ft-status ft-waiting"></div>
-                                <div class="ft-child-steps"></div>
+                            <div class="demo-contents--step demo-contents-import-widgets demo-contents--waiting">
+                                <div class="demo-contents--step-heading">Import Widgets</div>
+                                <div class="demo-contents--status demo-contents--waiting"></div>
+                                <div class="demo-contents--child-steps"></div>
                             </div>
 
-                            <div class="ft-step  ft-demo-import-customize">
-                                <div class="ft-step-heading">Import Customize</div>
-                                <div class="ft-status ft-waiting"></div>
-                                <div class="ft-child-steps"></div>
+                            <div class="demo-contents--step  demo-contents-import-customize demo-contents--waiting">
+                                <div class="demo-contents--step-heading">Import Customize</div>
+                                <div class="demo-contents--status demo-contents--waiting"></div>
+                                <div class="demo-contents--child-steps"></div>
                             </div>
                         </div>
 
-                    </div><!-- /.ft-demo-sidebar-content -->
+                    </div><!-- /.demo-contents-sidebar-content -->
 
-                    <div id="ft-demo-sidebar-footer">
-                        <input type="button" class="button button-primary save" value="<?php esc_attr_e( 'Import Now', 'ftdi' ); ?>">
+                    <div id="demo-contents-sidebar-footer">
+                        <input type="button" class="demo-contents--import-now button button-primary save" value="<?php esc_attr_e( 'Import Now', 'demo-contents' ); ?>">
                     </div>
 
                 </div>
-                <div id="ft-demo-viewing">
+                <div id="demo-contents-viewing">
                     <iframe src="{{ data.demoURL }}"></iframe>
                 </div>
             </div>
@@ -217,17 +217,17 @@ class Demo_Content_Dashboard {
 
         echo '<div class="wrap demo-contents">';
             ?>
-            <h1 class="wp-heading-inline"><?php _e( 'Demo Contents', 'ftdi' ); ?><span class="title-count theme-count"><?php echo $n; ?></span></h1>
+            <h1 class="wp-heading-inline"><?php _e( 'Demo Contents', 'demo-contents' ); ?><span class="title-count theme-count"><?php echo $n; ?></span></h1>
             <div class="wp-filter hide-if-no-js">
                 <div class="filter-count">
                     <span class="count theme-count"><?php echo $n; ?></span>
                 </div>
                 <ul class="filter-links">
-                    <li><a href="<?php echo $link_all; ?>" class="<?php echo ( ! $tab ) ? 'current' : ''; ?>"><?php _e( 'All Demos', 'ftdi' ); ?></a></li>
-                    <li><a href="<?php echo $link_current_theme; ?>"  class="<?php echo ( $tab == 'current_theme' ) ? 'current' : ''; ?>"><?php _e( 'Current Theme', 'ftdi' ); ?></a></li>
-                    <li><a href="<?php echo $link_export; ?>"  class="<?php echo ( $tab == 'export' ) ? 'current' : ''; ?>"><?php _e( 'Export', 'ftdi' ); ?></a></li>
+                    <li><a href="<?php echo $link_all; ?>" class="<?php echo ( ! $tab ) ? 'current' : ''; ?>"><?php _e( 'All Demos', 'demo-contents' ); ?></a></li>
+                    <li><a href="<?php echo $link_current_theme; ?>"  class="<?php echo ( $tab == 'current_theme' ) ? 'current' : ''; ?>"><?php _e( 'Current Theme', 'demo-contents' ); ?></a></li>
+                    <li><a href="<?php echo $link_export; ?>"  class="<?php echo ( $tab == 'export' ) ? 'current' : ''; ?>"><?php _e( 'Export', 'demo-contents' ); ?></a></li>
                 </ul>
-                <form class="search-form"><label class="screen-reader-text" for="wp-filter-search-input"><?php _e( 'Search Demos', 'ftdi' ); ?></label><input placeholder="Search themes..." aria-describedby="live-search-desc" id="wp-filter-search-input" class="wp-filter-search" type="search"></form>
+                <form class="search-form"><label class="screen-reader-text" for="wp-filter-search-input"><?php _e( 'Search Demos', 'demo-contents' ); ?></label><input placeholder="Search themes..." aria-describedby="live-search-desc" id="wp-filter-search-input" class="wp-filter-search" type="search"></form>
             </div>
 
 
@@ -240,11 +240,11 @@ class Demo_Content_Dashboard {
                                 <div class="screenshot"><img src="<?php echo esc_url( $this->current_theme->get_screenshot() ); ?>" alt=""></div>
                             </div>
                             <div class="theme-info">
-                                <span class="current-label"><?php _e( 'Current Theme', 'ftdi' ); ?></span>
+                                <span class="current-label"><?php _e( 'Current Theme', 'demo-contents' ); ?></span>
                                 <h2 class="theme-name"><?php echo $this->current_theme->get( 'Name' ); ?><span class="theme-version">Version: 1.3.3</span></h2>
-                                <p class="theme-author"><?php _e( 'By', 'ftdi' ); ?> <a href="<?php echo esc_url( $this->current_theme->get( 'AuthorURI' ) ); ?>"><?php echo $this->current_theme->get( 'Author' ); ?></a></p>
+                                <p class="theme-author"><?php _e( 'By', 'demo-contents' ); ?> <a href="<?php echo esc_url( $this->current_theme->get( 'AuthorURI' ) ); ?>"><?php echo $this->current_theme->get( 'Author' ); ?></a></p>
                                 <p class="theme-description"><?php echo esc_html(  $this->current_theme->get( 'Description' )  ); ?></p>
-                                <p class="theme-tags"><span><?php _e( 'Tags:', 'ftdi' ); ?></span> <?php echo esc_html( join( ', ', $this->current_theme->get( 'Tags' ) )  ); ?></p>
+                                <p class="theme-tags"><span><?php _e( 'Tags:', 'demo-contents' ); ?></span> <?php echo esc_html( join( ', ', $this->current_theme->get( 'Tags' ) )  ); ?></p>
                             </div>
                         </div>
                         <div class="theme-actions">
@@ -254,7 +254,7 @@ class Demo_Content_Dashboard {
                                    data-demo-version=""
                                    data-name="<?php echo esc_attr( $this->current_theme->get( 'Name' ) ); ?>"
                                    data-demo-url=""
-                                   class="ft-preview-theme-btn button button-primary"><?php _e( 'Import Demo Content', 'ftdi' ); ?></a>
+                                   class="demo-contents--preview-theme-btn button button-primary"><?php _e( 'Import Demo Content', 'demo-contents' ); ?></a>
                             </div>
                         </div>
                     </div>
@@ -274,18 +274,18 @@ class Demo_Content_Dashboard {
                             <div class="theme-screenshot">
                                 <img src="<?php echo esc_url($item['_image']) ?>" alt="">
                             </div>
-                            <a href="<?php echo esc_url( $item['link'] ); ?>" target="_blank" class="more-details" id="<?php echo esc_attr($theme); ?>-action"><?php _e( 'Theme Details', 'ftdi' ); ?></a>
+                            <a href="<?php echo esc_url( $item['link'] ); ?>" target="_blank" class="more-details" id="<?php echo esc_attr($theme); ?>-action"><?php _e( 'Theme Details', 'demo-contents' ); ?></a>
                             <div class="theme-author">By FameThemes</div>
                             <h2 class="theme-name" id="<?php echo esc_attr($theme); ?>-name"><?php echo esc_html($item['title']['rendered']); ?></h2>
                             <div class="theme-actions">
                                 <?php
                                 if ( $item['__is_installed'] ) {
                                     ?>
-                                    <a class="button button-primary customize load-customize hide-if-no-customize" href="#"><?php _e( 'Import', 'ftdi' ); ?></a>
+                                    <a class="button button-primary customize load-customize hide-if-no-customize" href="#"><?php _e( 'Import', 'demo-contents' ); ?></a>
                                     <?php
                                 } else {
                                     ?>
-                                    <a class="button button-secondary customize load-customize hide-if-no-customize" href="#"><?php _e( 'Download', 'ftdi' ); ?></a>
+                                    <a class="button button-secondary customize load-customize hide-if-no-customize" href="#"><?php _e( 'Download', 'demo-contents' ); ?></a>
                                     <?php
                                 }
                                 ?>

@@ -6,7 +6,7 @@ Description: Demo data import tool for FameThemes's themes.
 Author: famethemes
 Author URI:  http://www.famethemes.com/
 Version: 1.0.5
-Text Domain: ftdi
+Text Domain: demo-contents
 License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 */
 
@@ -34,8 +34,9 @@ class Demo_Contents {
 
         require_once $this->dir.'inc/class-progress.php';
 
-        add_action( 'wp_ajax_ft_demo_import_content', array( $this, 'ajax_import' ) );
-        add_action( 'wp_ajax_ft_demo_import_download', array( $this, 'ajax_download' ) );
+       // add_action( 'wp_ajax_demo_contents__import_content', array( $this, 'ajax_import' ) );
+       // add_action( 'wp_ajax_demo_contents__import_download', array( $this, 'ajax_download' ) );
+
         add_action( 'wp_ajax_ft_demo_export', array( $this, 'ajax_export' ) );
 
         $template_slug = get_option( 'template' );
@@ -232,10 +233,10 @@ class Demo_Contents {
 }
 
 if ( is_admin() ) {
-    function ft_demo_importer(){
+    function demo_contents__init(){
         new Demo_Contents();
     }
-    add_action( 'plugins_loaded', 'ft_demo_importer' );
+    add_action( 'plugins_loaded', 'demo_contents__init' );
 }
 
 /**
@@ -244,7 +245,7 @@ if ( is_admin() ) {
  * @param $plugin
  * @param bool|false $network_wide
  */
-function ft_demo_importer_plugin_activate( $plugin, $network_wide = false ) {
+function demo_contents_importer_plugin_activate( $plugin, $network_wide = false ) {
     if ( ! $network_wide &&  $plugin == plugin_basename( __FILE__ ) ) {
         $template_slug = get_option('template');
         $url = add_query_arg(
@@ -258,7 +259,7 @@ function ft_demo_importer_plugin_activate( $plugin, $network_wide = false ) {
         die();
     }
 }
-add_action( 'activated_plugin', 'ft_demo_importer_plugin_activate', 90, 2 );
+add_action( 'activated_plugin', 'demo_contents_importer_plugin_activate', 90, 2 );
 
 
 

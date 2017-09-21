@@ -156,7 +156,7 @@ p.success {
 
 //------------------------------------
 /*
-.ft-demo-import-now.button.updating-message:before {
+.demo-contents-import-now.button.updating-message:before {
     margin: 13px 5px 0 -2px;
 }
 
@@ -234,19 +234,19 @@ p.success {
 .demo-contents .theme .theme-actions {
     opacity: 1;
 }
-.ft-demo-import-progress {
+.demo-contents-import-progress {
     background: #ffffff;
     padding: 30px;
 }
-.ft-step-heading {
+.demo-contents--step-heading {
     font-size: 14px;
     font-weight: 600;
     line-height: 18px;
 }
-.ft-child-item {
+.demo-contents-child-item {
     margin: 5px 0px;
 }
-.ft-demo-import-progress .ft-step {
+.demo-contents-import-progress .demo-contents--step {
     border-bottom: 1px solid #ddd;
     padding-bottom: 15px;
     padding-top: 15px;
@@ -257,12 +257,12 @@ p.success {
 @keyframes spin { 100% { -webkit-transform: rotate(360deg); transform:rotate(360deg); } }
 
 
-.ft-step {
+.demo-contents--step {
     position: relative;
-    .ft-child-steps {
+    .demo-contents--child-steps {
         display: none;
     }
-    .ft-status {
+    .demo-contents--status {
         background: none;
         border: none !important;
         -webkit-box-shadow: none;
@@ -286,7 +286,8 @@ p.success {
             display: block;
             font-weight: normal;
         }
-        &.ft-loading {
+        /*
+        &.demo-contents--loading {
             -webkit-animation:spin 2s linear infinite;
             -moz-animation:spin 2s linear infinite;
             animation:spin 2s linear infinite;
@@ -296,37 +297,59 @@ p.success {
             }
         }
 
-        &.ft-waiting {
+        &.demo-contents--waiting {
             //color: #f56e28;
             &:before {
                 content: "\f469";
             }
         }
 
-        &.ft-completed {
+        &.demo-contents--completed {
+            color: #65ae1f;
+            &::before {
+                content: "\f147";
+            }
+        }
+        */
+    }
+
+    &.demo-contents--running {
+        .demo-contents--status {
+            -webkit-animation:spin 2s linear infinite;
+            -moz-animation:spin 2s linear infinite;
+            animation:spin 2s linear infinite;
+            color: #f56e28;
+            &:before {
+                content: "\f463";
+            }
+        }
+    }
+
+    &.demo-contents--waiting {
+        .demo-contents--status {
+            &:before {
+                content: "\f469";
+            }
+        }
+    }
+
+    &.demo-contents--completed {
+        .demo-contents--status {
             color: #65ae1f;
             &::before {
                 content: "\f147";
             }
         }
     }
-
-    &.ft-step-running {
-        background: #f9d673;
-    }
-
-    &.ft-step-completed {
-        background: #c2e3b0;
-    }
 }
 
 
-body.ft-demo-body-viewing {
+body.demo-contents-body-viewing {
     overflow: hidden !important;
 }
 
 
-#ft-theme-demo-preview {
+#demo-contents--preview {
     z-index: 9999999;
     background: #eee;
     position: fixed;
@@ -336,7 +359,7 @@ body.ft-demo-body-viewing {
     display: block;
     width: 100%;
 
-    .ft-demo-close {
+    .demo-contents-close {
         display: block;
         float: left;
         width: 45px;
@@ -361,7 +384,7 @@ body.ft-demo-body-viewing {
             left: 13px;
         }
     }
-    .ft-collapse-sidebar {
+    .demo-contents-collapse-sidebar {
         z-index: 9999999;
         bottom: 5px;
         left: 0;
@@ -410,7 +433,7 @@ body.ft-demo-body-viewing {
         }
     }
 
-    #ft-demo-sidebar-topbar {
+    #demo-contents-sidebar-topbar {
         display: block;
         text-align: right;
         border-bottom: 1px solid #ddd;
@@ -423,7 +446,7 @@ body.ft-demo-body-viewing {
         font-weight: bold;
         line-height: 24px;
     }
-    #ft-demo-sidebar {
+    #demo-contents-sidebar {
         width: 300px;
         top: 0px;
         left: 0px;
@@ -437,11 +460,11 @@ body.ft-demo-body-viewing {
         overflow: hidden;
     }
     &.ft-preview-collapse {
-        #ft-demo-sidebar {
+        #demo-contents-sidebar {
             left: -301px;
 
         }
-        #ft-demo-viewing {
+        #demo-contents-viewing {
             margin-left: 0px;
         }
         .collapse-sidebar-label {
@@ -449,7 +472,7 @@ body.ft-demo-body-viewing {
         }
     }
 
-    #ft-demo-sidebar-heading {
+    #demo-contents-sidebar-heading {
         background: #fff;
         color: #555d66;
         margin: 0;
@@ -468,7 +491,7 @@ body.ft-demo-body-viewing {
         }
     }
 
-    #ft-demo-viewing {
+    #demo-contents-viewing {
         margin-left: 301px;
         position: relative;
         height: 100%;
@@ -483,7 +506,7 @@ body.ft-demo-body-viewing {
         transition:  all .3s;
         overflow: hidden;
     }
-    #ft-demo-sidebar-content {
+    #demo-contents-sidebar-content {
         position: absolute;
         top: 46px;
         bottom: 49px;
@@ -492,7 +515,7 @@ body.ft-demo-body-viewing {
         width: 100%;
         overflow: auto;
     }
-    #ft-demo-sidebar-footer {
+    #demo-contents-sidebar-footer {
         position: absolute;
         bottom: 0px;
         right: 0px;
