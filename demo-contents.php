@@ -172,9 +172,16 @@ class Demo_Contents {
 
 }
 
+/*
+echo '<pre>';
+print_r( get_theme_mod( 'clients_items' ) );
+echo '</pre>';
+*/
+
 if ( is_admin() ) {
     function demo_contents__init(){
         new Demo_Contents();
+
     }
     add_action( 'plugins_loaded', 'demo_contents__init' );
 }

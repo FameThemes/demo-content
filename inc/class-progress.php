@@ -198,7 +198,7 @@ class  Demo_Contents_Progress {
                 if ( isset( $option_config['theme_mods'] ) ){
                     $importer->importThemeOptions( $option_config['theme_mods'] );
                     if ( isset( $option_config['customizer_keys'] ) ) {
-                        foreach ( ( array ) $option_config['customizer_keys'] as $k=> $list_key ) {
+                        foreach ( ( array ) $option_config['customizer_keys'] as $k => $list_key ) {
                             $this->resetup_repeater_page_ids( $k, $list_key );
                         }
                     }
@@ -363,7 +363,7 @@ class  Demo_Contents_Progress {
     }
 
 
-    function resetup_repeater_page_ids( $theme_mod_name = null, $list_keys, $processed_posts = array(), $url ='', $option_type = 'theme_mod' ){
+    function resetup_repeater_page_ids( $theme_mod_name = null, $list_keys, $url ='', $option_type = 'theme_mod' ){
 
         $processed_posts = get_transient('_wxr_imported_posts') ? : array();
         if ( ! is_array( $processed_posts ) ) {
@@ -407,7 +407,7 @@ class  Demo_Contents_Progress {
             if ($key_info['type'] == 'post' || $key_info['type'] == 'page') {
                 foreach ($data as $k => $item) {
                     if (isset($item[$key_info['key']]) && isset ($processed_posts[$item[$key_info['key']]])) {
-                        $data[$k][$key_info['key']] = $processed_posts[$item[$key_info['key']]];
+                        $data[$k][$key_info['key']] = $processed_posts[ $item[$key_info['key']] ];
                     }
                 }
             } elseif ($key_info['type'] == 'media') {
@@ -418,12 +418,12 @@ class  Demo_Contents_Progress {
                 if ($main_key) {
 
                     foreach ($data as $k => $item) {
-                        if (isset($item[$sub_key_id]) && is_array($item[$sub_key_id])) {
-                            if (isset ($item[$main_key][$sub_key_id])) {
-                                $data[$item][$main_key][$sub_key_id] = $processed_posts[$item[$main_key][$sub_key_id]];
+                        if ( isset ($item[$main_key]) && is_array($item[$main_key])) {
+                            if (isset ($item[$main_key][$sub_key_id]) ) {
+                                $data[$k][$main_key][$sub_key_id] = $processed_posts[ $item[$main_key] [$sub_key_id] ];
                             }
                             if (isset ($item[$main_key][$sub_key_url])) {
-                                $data[$item][$main_key][$sub_key_url] = str_replace($url, $home, $item[$main_key][$sub_key_url]);
+                                $data[$k][$main_key][$sub_key_url] = str_replace($url, $home, $item[$main_key][$sub_key_url]);
                             }
                         }
                     }

@@ -136,7 +136,7 @@ var demo_contents_viewing_theme = window.demo_contents_viewing_theme || {};
             }
 
 
-            if ( demo_contents_viewing_theme.activate) {
+            if ( demo_contents_viewing_theme.activate ) {
                 $( '.demo-contents--activate-notice' ).hide();
             } else {
                 $( '.demo-contents-import-progress' ).hide();
@@ -455,7 +455,7 @@ var demo_contents_viewing_theme = window.demo_contents_viewing_theme || {};
                         button.html( demo_contents_params.activate_theme );
                     }
                 } else {
-                    $( '.demo-contents--activate-notice' ).show().html( res.data );
+                    $( '.demo-contents--activate-notice' ).addClass('not-found-data').show().html( res.data );
                     $( '.demo-contents-import-progress' ).hide();
                     button.replaceWith( '<a href="#" class="demo-contents--no-data-btn button button-secondary disabled disable">'+demo_contents_params.import_now+'</a>' );
                 }
@@ -541,16 +541,16 @@ var demo_contents_viewing_theme = window.demo_contents_viewing_theme || {};
                 if ( ! btn.hasClass( 'updating-message' ) ) {
                     btn.addClass( 'updating-message' );
                     that.ajax( 'activate_theme', function( res ){
-                        var new_btn = $( '<a href="#" class="updating-message button button-primary">' + demo_contents_params.checking_theme + '</a>' );
+                        var new_btn = $( '<a href="#" class="demo-contents--checking-resource  updating-message button button-primary">' + demo_contents_params.checking_theme + '</a>' );
                         btn.replaceWith( new_btn );
 
                         demo_contents_params.current_theme = demo_contents_viewing_theme.slug;
                         demo_contents_params.current_child_theme =  demo_contents_viewing_theme.slug;
 
-                        demo_contents_viewing_theme = '';
                         $.get( demo_contents_params.theme_url, { __checking_plugins: 1 }, function( res ){
-                            console.log( 'Checking plugin completed' );
-                            new_btn.replaceWith('<a href="#" class="demo-contents--import-now button button-primary">' + demo_contents_params.import_now + '</a>');
+                            console.log( 'Checking plugin completed: ', demo_contents_params.import_now );
+
+                            $( '.demo-contents--checking-resource, .demo-contents--activate-now' ).replaceWith('<a href="#" class="demo-contents--import-now button button-primary">' + demo_contents_params.import_now + '</a>');
                             if ( res.success ) {
                                 demo_contents_viewing_theme.activate = true;
                                 that.preparing_plugins( res.data );
@@ -564,9 +564,9 @@ var demo_contents_viewing_theme = window.demo_contents_viewing_theme || {};
             } );
 
             $document.on( 'demo_contents_preview_opened', function(){
-              //  that.loading();
+                //  that.loading();
                 that.checking_resources();
-               // $document.trigger( 'demo_contents_import_widgets_completed' );
+                // $document.trigger( 'demo_contents_import_widgets_completed' );
             } );
 
             //$( '.demo-contents--preview-theme-btn' ).eq( 0 ).click();
