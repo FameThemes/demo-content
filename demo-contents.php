@@ -209,6 +209,21 @@ function demo_contents_importer_plugin_activate( $plugin, $network_wide = false 
 add_action( 'activated_plugin', 'demo_contents_importer_plugin_activate', 90, 2 );
 
 
+// Support Upload XML file
+add_filter('upload_mimes', 'demo_contents_custom_upload_xml');
+function demo_contents_custom_upload_xml($mimes)
+{
+    if ( current_user_can( 'upload_files' ) ) {
+    $mimes = array_merge($mimes, array(
+        'xml' => 'application/xml',
+        'json' => 'application/json'
+    ));
+    }
+    return $mimes;
+}
+
+
+
 
 
 

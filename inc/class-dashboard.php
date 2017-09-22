@@ -19,7 +19,7 @@ class Demo_Content_Dashboard {
 
 
     function add_menu() {
-        add_management_page( __( 'Demo Content', 'demo-contents' ), __( 'Demo Content', 'demo-contents' ), 'manage_options', $this->page_slug, array( $this, 'dashboard' ) );
+        add_management_page( __( 'Demo Contents', 'demo-contents' ), __( 'Demo Contents', 'demo-contents' ), 'manage_options', $this->page_slug, array( $this, 'dashboard' ) );
     }
 
     function get_allowed_authors(){
@@ -153,7 +153,15 @@ class Demo_Content_Dashboard {
                         <# } #>
 
                         <div class="demo-contents--activate-notice">
-                            <?php _e( 'Your must activate this theme before import demo content', 'demo-contents' ); ?>
+                            <?php _e( 'This theme is inactivated. Your must activate this theme before import demo content', 'demo-contents' ); ?>
+                        </div>
+
+                        <div class="demo-contents--activate-notice resources-not-found demo-contents-hide">
+                            <p class="demo-contents--msg"></p>
+                            <div class="demo-contents---upload">
+                                <p><button type="button" class="demo-contents--upload-xml button-secondary"><?php _e( 'Upload XML file .xml', 'demo-contents' ); ?></button></p>
+                                <p><button type="button" class="demo-contents--upload-json button-secondary"><?php _e( 'Upload config file .json or .txt', 'demo-contents' ); ?></button></p>
+                            </div>
                         </div>
 
                         <div class="demo-contents-import-progress">
@@ -304,7 +312,7 @@ class Demo_Content_Dashboard {
                             data-demo-url=""
                             class="demo-contents--preview-theme-btn button button-primary customize"
                             href="#"
-                        ><?php _e('View', 'demo-contents'); ?></a>
+                        ><?php _e('Start Import Demo', 'demo-contents'); ?></a>
                     </div>
                 </div>
                 <?php

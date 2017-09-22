@@ -72,6 +72,16 @@ class  Demo_Contents_Progress {
 
         // Current theme for import
         $current_theme = isset( $_REQUEST['current_theme'] ) ? $_REQUEST['current_theme'] : false;
+
+        $current_theme = wp_parse_args( $current_theme, array(
+            'name' => '',
+            'slug' => '',
+            'demo_version' => '',
+            'demo_name' => '',
+            'activate' => '',
+            'xml_id' => '',
+            'json_id' => ''
+        ) );
         $current_theme_slug = false;
         $current_theme_demo_version = false;
         if ( ! $current_theme || ! is_array( $current_theme ) || ! isset( $current_theme['slug'] ) || ! $current_theme['slug'] ) {
@@ -95,16 +105,16 @@ class  Demo_Contents_Progress {
         }
 
         if ( $doing == 'checking_resources' ){
-            $file_data = $this->maybe_remote_download_data_files( $current_theme_slug,  $current_theme_demo_version );
+            $file_data = $this->maybe_remote_download_data_files( $current_theme );
             if ( ! $file_data || empty( $file_data ) ) {
-                wp_send_json_error( sprintf( __( 'Demo data not found for %s', 'demo-contents' ) , $themes[ $current_theme_slug ]->get("Name") ) );
+                wp_send_json_error( sprintf( __( 'Demo data not found for <strong>%s</strong>. However you can import demo content by upload your demo files below.', 'demo-contents' ) , $themes[ $current_theme_slug ]->get("Name") ) );
             } else {
                 wp_send_json_success( __( 'Data ready.', 'demo-contents' ) );
             }
         }
 
         //wp_send_json_success(); // just for test
-       $file_data = $this->maybe_remote_download_data_files( $current_theme_slug,  $current_theme_demo_version );
+       $file_data = $this->maybe_remote_download_data_files( $current_theme );
        if ( ! $file_data || empty( $file_data ) ) {
            wp_send_json_error( array( 'type' => 'no-files', 'msg' => __( 'Dummy data files not found', 'demo-contents' ), 'files' => $file_data  ) );
        }
@@ -237,9 +247,10 @@ class  Demo_Contents_Progress {
 
     function scripts(){
         wp_enqueue_style( 'demo-contents', DEMO_CONTENT_URL . 'style.css', false );
-
         wp_enqueue_script( 'underscore');
         wp_enqueue_script( 'demo-contents', DEMO_CONTENT_URL.'assets/js/importer.js', array( 'jquery', 'underscore' ) );
+
+        wp_enqueue_media();
 
         $run = isset( $_REQUEST['import_now'] ) && $_REQUEST['import_now'] == 1 ? 'run' : 'no';
 
@@ -355,7 +366,6 @@ class  Demo_Contents_Progress {
                     }
                 }
 
-
             }
         }
 
@@ -441,7 +451,20 @@ class  Demo_Contents_Progress {
     }
 
 
-    function maybe_remote_download_data_files( $theme_name, $demo_version = '' ) {
+    function maybe_remote_download_data_files( $args = array() ) {
+        $args = wp_parse_args( $args, array(
+            'slug' => '',
+            'demo_version' => '',
+            'xml_id' => '',
+            'json_id' => ''
+        ) );
+
+        $theme_name = $args['slug'];
+        $demo_version = $args['demo_version'];
+        if ( $args['xml_id'] ) {
+            return array( 'xml' => get_attached_file( $args['xml_id'] ), 'json' => get_attached_file( $args['json_id'] ) );
+        }
+
         if ( ! $theme_name ) {
             return false;
         }
