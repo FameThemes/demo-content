@@ -20,27 +20,27 @@ class Demo_Contents {
     public $dir;
     public $url;
     static $git_repo = 'FameThemes/famethemes-xml-demos';
-    function __construct( ){
+    public $dashboard;
+    public $progress;
+    static $_instance;
 
-        $this->url = trailingslashit( plugins_url('', __FILE__) );
-        $this->dir = trailingslashit( plugin_dir_path( __FILE__) );
-
-        include dirname( __FILE__ ).'/inc/class-dashboard.php';
-
-        // Example config plugins
-        require_once $this->dir.'inc/class-tgm-plugin-activation.php';
-        require_once $this->dir.'/sample/example.php';
-        require_once $this->dir.'inc/class-progress.php';
-
-        $current_item = apply_filters( 'ft_demo_import_current_item',  false );
-
-        if ( ! $current_item ) {
-            $current_item = get_option( 'template' );
-            $current_item = untrailingslashit( $current_item );
+    static function get_instance(){
+        if ( is_null( self::$_instance ) ) {
+            self::$_instance = new self();
         }
 
-        $current_item_name = str_replace( array( '-', '_' ), ' ', $current_item );
-        $current_item_name = ucwords( $current_item_name );
+        return self::$_instance ;
+    }
+
+    function __construct(){
+
+        require_once DEMO_CONTENT_PATH.'inc/class-tgm-plugin-activation.php';
+        require_once DEMO_CONTENT_PATH.'inc/theme-supports.php';
+        require_once DEMO_CONTENT_PATH.'inc/class-dashboard.php';
+        require_once DEMO_CONTENT_PATH.'inc/class-progress.php';
+        $this->dashboard = new Demo_Content_Dashboard();
+        $this->progress = new Demo_Contents_Progress();
+
 
     }
 

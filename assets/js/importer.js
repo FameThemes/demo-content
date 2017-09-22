@@ -391,7 +391,7 @@ var demo_contents_viewing_theme = window.demo_contents_viewing_theme || {};
                 var name            = btn.attr( 'data-name' ) || '';
                 var demo_version    = btn.attr( 'data-demo-version' ) || '';
                 var demo_name       = btn.attr( 'data-demo-version-name' ) || '';
-                var img             = $( '.theme-screenshot', theme ).html();
+                var img             = $( '.theme-screenshot img', theme ).attr( 'src' );
                 if ( demoURL.indexOf( 'http' ) !== 0 ) {
                     demoURL = 'https://demos.famethemes.com/'+slug+'/';
                 }
@@ -407,8 +407,10 @@ var demo_contents_viewing_theme = window.demo_contents_viewing_theme || {};
                     activate: false
                 };
 
-                if ( demo_contents_params.current_theme == slug  ||  demo_contents_params.current_child_theme ==  slug ) {
-                    demo_contents_viewing_theme.activate = true;
+                if ( typeof demo_contents_params.installed_themes[ slug ] !== "undefined" ) {
+                    if ( demo_contents_params.installed_themes[ slug ].activate ) {
+                        demo_contents_viewing_theme.activate = true;
+                    }
                 }
 
                 var previewHtml = template( demo_contents_viewing_theme );

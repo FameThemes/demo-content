@@ -11,10 +11,140 @@ class Demo_Content_Dashboard {
     private $items = array();
     private $current_theme = null;
     private $allowed_authors = array();
+    public  $tgmpa = null;
     function __construct()
     {
         add_action( 'admin_menu', array( $this, 'add_menu' ) );
         add_action( 'admin_footer', array( $this, 'preview_template' ) );
+        add_action( 'admin_enqueue_scripts', array( $this, 'scripts' ) );
+    }
+
+    function get_tgmpa(){
+        if ( empty( $this->tgmpa ) ) {
+            if ( class_exists( 'TGM_Plugin_Activation' ) ) {
+                $this->tgmpa = isset( $GLOBALS['tgmpa'] ) ? $GLOBALS['tgmpa'] : TGM_Plugin_Activation::get_instance();
+            }
+        }
+        return $this->tgmpa;
+    }
+
+
+    function scripts(){
+        wp_enqueue_style( 'demo-contents', DEMO_CONTENT_URL . 'style.css', false );
+        wp_enqueue_script( 'underscore');
+        wp_enqueue_script( 'demo-contents', DEMO_CONTENT_URL.'assets/js/importer.js', array( 'jquery', 'underscore' ) );
+        wp_enqueue_media();
+        $run = isset( $_REQUEST['import_now'] ) && $_REQUEST['import_now'] == 1 ? 'run' : 'no';
+        $themes = $this->setup_themes();
+        $tgm_url = '';
+        // Localize the javascript.
+        $plugins = array();
+        $this->get_tgmpa();
+        if ( ! empty( $this->tgmpa ) ) {
+            $tgm_url = $this->tgmpa->get_tgmpa_url();
+            $plugins = $this->get_tgmpa_plugins();
+        }
+
+        $template_slug  = get_option( 'template' );
+        $theme_slug     = get_option( 'stylesheet' );
+
+        wp_localize_script( 'demo-contents', 'demo_contents_params', array(
+            'tgm_plugin_nonce' 	=> array(
+                'update'  	=> wp_create_nonce( 'tgmpa-update' ),
+                'install' 	=> wp_create_nonce( 'tgmpa-install' ),
+            ),
+            'messages' 		        => array(
+                'plugin_installed'    => __( '%s installed', 'demo-contents' ),
+                'plugin_not_installed'    => __( '%s not installed', 'demo-contents' ),
+                'plugin_not_activated'    => __( '%s not activated', 'demo-contents' ),
+                'plugin_installing' => __( 'Installing %s...', 'demo-contents' ),
+                'plugin_activating' => __( 'Activating %s...', 'demo-contents' ),
+                'plugin_activated'  => __( '%s activated', 'demo-contents' ),
+            ),
+            'tgm_bulk_url' 		    => $tgm_url,
+            'ajaxurl'      		    => admin_url( 'admin-ajax.php' ),
+            'theme_url'      		=> admin_url( 'themes.php' ),
+            'wpnonce'      		    => wp_create_nonce( 'merlin_nonce' ),
+            'action_install_plugin' => 'tgmpa-bulk-activate',
+            'action_active_plugin'  => 'tgmpa-bulk-activate',
+            'action_update_plugin'  => 'tgmpa-bulk-update',
+            'plugins'               => $plugins,
+            'home'                  => home_url('/'),
+            'btn_done_label'        => __( 'All Done! View Site', 'demo-contents' ),
+            'failed_msg'            => __( 'Import Failed!', 'demo-contents' ),
+            'import_now'            => __( 'Import Now', 'demo-contents' ),
+            'activate_theme'        => __( 'Activate Now', 'demo-contents' ),
+            'checking_theme'        => __( 'Checking theme', 'demo-contents' ),
+            'checking_resource'        => __( 'Checking resource', 'demo-contents' ),
+            'confirm_leave'         => __( 'Importing demo content..., are you sure want to cancel ?', 'demo-contents' ),
+            'installed_themes'      => $themes,
+            'current_theme'         => $template_slug,
+            'current_child_theme'   => $theme_slug,
+        ) );
+
+    }
+
+    /**
+     * Get registered TGMPA plugins
+     *
+     * @return    array
+     */
+    protected function get_tgmpa_plugins() {
+        $this->get_tgmpa();
+        if ( empty( $this->tgmpa ) ) {
+            return array();
+        }
+        $plugins  = array(
+            'all'      => array(), // Meaning: all plugins which still have open actions.
+            'install'  => array(),
+            'update'   => array(),
+            'activate' => array(),
+        );
+
+        $tgmpa_url = $this->tgmpa->get_tgmpa_url();
+
+        foreach ( $this->tgmpa->plugins as $slug => $plugin ) {
+            if ( $this->tgmpa->is_plugin_active( $slug ) && false === $this->tgmpa->does_plugin_have_update( $slug ) ) {
+                continue;
+            } else {
+                $plugins['all'][ $slug ] = $plugin;
+
+                $args =   array(
+                    'plugin' => $slug,
+                    'tgmpa-page' => $this->tgmpa->menu,
+                    'plugin_status' => 'all',
+                    '_wpnonce' => wp_create_nonce('bulk-plugins'),
+                    'action' => '',
+                    'action2' => -1,
+                    //'message' => esc_html__('Installing', '@@textdomain'),
+                );
+
+                $plugin['page_url'] = $tgmpa_url;
+
+                if ( ! $this->tgmpa->is_plugin_installed( $slug ) ) {
+                    $plugins['install'][ $slug ] = $plugin;
+                    $action = 'tgmpa-bulk-install';
+                    $args['action'] = $action;
+                    $plugins['install'][ $slug ][ 'args' ] = $args;
+                } else {
+                    if ( false !== $this->tgmpa->does_plugin_have_update( $slug ) ) {
+                        $plugins['update'][ $slug ] = $plugin;
+                        $action = 'tgmpa-bulk-update';
+                        $args['action'] = $action;
+                        $plugins['update'][ $slug ][ 'args' ] = $args;
+                    }
+                    if ( $this->tgmpa->can_plugin_activate( $slug ) ) {
+                        $plugins['activate'][ $slug ] = $plugin;
+                        $action = 'tgmpa-bulk-activate';
+                        $args['action'] = $action;
+                        $plugins['activate'][ $slug ][ 'args' ] = $args;
+                    }
+                }
+
+            }
+        }
+
+        return $plugins;
     }
 
 
@@ -112,7 +242,7 @@ class Demo_Content_Dashboard {
                         </div>
                         <# } #>
                         <# if ( data.img ) { #>
-                            <div class="demo-contents--theme-thumbnail">{{{ data.img }}}</div>
+                            <div class="demo-contents--theme-thumbnail"><img src="{{ data.img }}" alt=""/></div>
                         <# } #>
 
                         <div class="demo-contents--activate-notice">
@@ -205,62 +335,87 @@ class Demo_Content_Dashboard {
     }
 
     function setup_themes(){
-        $this->current_theme = wp_get_theme();
 
-        $current_theme = get_option( 'template' );
-        $child_theme    = get_option( 'stylesheet' );
+        if ( ! empty( $this->items) ) {
+            return $this->items;
+        }
+
+        $current_theme_slug = get_option( 'template' );
+        $child_theme_slug    = get_option( 'stylesheet' );
 
         $installed_themes = wp_get_themes();
         $list_themes = array();
 
-
         // Listing installed themes
-        foreach (( array )$installed_themes as $theme_slug => $theme) {
-            if (!$this->is_allowed_theme($theme->get('Author'))) {
+        foreach ( ( array )$installed_themes as $theme_slug => $theme) {
+            if ( ! $this->is_allowed_theme($theme->get('Author'))) {
                 continue;
             }
-
             $list_themes[ $theme_slug ] = array(
                 'slug'          => $theme_slug,
                 'name'          => $theme->get('Name'),
                 'screenshot'    => $theme->get_screenshot(),
-                'author'        => $theme->get('Author')
+                'author'        => $theme->get('Author'),
+                'activate'      => false,
+                'is_plugin'     => false
             );
-            
+        }
+        $current_theme = false;
+        $child_theme = false;
+        if (  isset( $list_themes[ $current_theme_slug ]  ) ) {
+            $current_theme = $list_themes[ $current_theme_slug ];
+            unset( $list_themes[ $current_theme_slug ] );
         }
 
-
-        /*
-        $items = $this->get_items();
-        $current_slug = $current_parent_slug;
-        if ( isset( $this->items[ $current_child_slug ] ) ) {
-            $current_slug = $this->items[ $current_child_slug ];
+        if ( isset(  $list_themes[ $child_theme_slug ] )  ) {
+            $child_theme = $list_themes[ $child_theme_slug ];
+            unset( $list_themes[ $child_theme_slug ] );
         }
 
-        $installed_items = array();
-        $not_installed_items = array();
+        // Move current theme to top
+        if ( $current_theme ) {
+            $current_theme['activate'] = true;
+            $list_themes = array( $current_theme_slug => $current_theme ) + $list_themes;
+        }
 
-        foreach ( $items as $item ) {
-            $slug = $item['slug'];
-            if ( isset( $this->config_slugs[ $slug  ] ) ) {
-                $slug = $this->config_slugs[ $slug  ];
-            }
-            if ( $current_slug == $slug ) {
-                $item['__is_current'] = true;
-            } else {
-                $item['__is_current'] = false;
-            }
-            $item['__is_installed'] = $this->is_installed( $slug );
-            if ( $item['__is_installed'] ) {
-                $installed_items[ $slug ] = $item;
-            } else {
-                $not_installed_items[ $slug ] = $item;
+        $support_plugins = array(
+            'onepress-plus/onepress-plus.php' => array(
+                'name' => 'OnePress Plus',
+                'slug' => 'onepress-plus',
+                'theme' => 'onepress'
+            ),
+            'screenr-plus/screenr-plus.php' => array(
+                'name' => 'Screenr Plus',
+                'slug' => 'screenr-plus',
+                'theme' => 'screenr'
+            )
+        );
+
+        // Check if plugin active
+        foreach ( $support_plugins as $plugin => $info ) {
+            if ( is_plugin_active( $plugin ) ) {
+                if ( $current_theme_slug == $info['theme'] ) {
+                    if ( isset( $list_themes[ $info['theme'] ] ) ) {
+                        $clone = $list_themes[ $info['theme'] ];
+                        $clone['activate'] = true;
+                        $clone['name'] =  $info['name'];
+                        $clone['slug'] =  $info['slug'];
+                        $clone['is_plugin'] = true;
+                        // Move clone theme to top because it need to stay above current theme
+                        $list_themes = array(  $info['slug'] => $clone ) + $list_themes;
+                    }
+                }
             }
         }
 
-        $new_items =  array_merge( $installed_items, $not_installed_items );
-        $this->items = $new_items;
-        */
+        // Move child theme to top
+        if ( $child_theme ) {
+            $child_theme['activate'] = true;
+            $list_themes = array( $child_theme_slug => $child_theme ) + $list_themes;
+        }
+
+        $this->items = $list_themes;
+        return  $this->items;
     }
 
     function dashboard() {
@@ -276,61 +431,36 @@ class Demo_Content_Dashboard {
         $link_export= '?page='.$this->page_slug.'&tab=export';
         $tab = isset( $_GET['tab'] )  ? $_GET['tab'] : '';
 
-        $is_allowed_current_theme =  $this->is_allowed_theme( $this->current_theme->get( 'Author' ) );
-        $current_theme_slug = $this->current_theme->get_template();
-        $install_themes = wp_get_themes();
-
         ob_start();
 
+        $number_theme = count( $this->items );
+
         if ( has_action( 'demo_contents_before_themes_listing' ) ) {
-            do_action( 'demo_contents_before_themes_listing' );
+            do_action( 'demo_contents_before_themes_listing', $this );
         } else {
-            if ( $is_allowed_current_theme ) {
-                $number_theme++;
-                ?>
-                <div class="demo-contents--current-theme theme" tabindex="0" data-slug="<?php echo esc_attr($this->current_theme->get_template()); ?>">
-                    <div class="theme-screenshot">
-                        <img src="<?php echo esc_url($this->current_theme->get_screenshot()); ?>" alt="">
-                    </div>
-                    <span class="more-details"><?php _e('Current Theme', 'demo-contents'); ?></span>
-                    <div class="theme-author"><?php sprintf(__('by %s', 'demo-contents'), $this->current_theme->get('Author')); ?></div>
-                    <h2 class="theme-name" id="<?php echo esc_attr($this->current_theme->get_template()); ?>-name"><?php echo esc_html($this->current_theme->get('Name')); ?></h2>
-                    <div class="theme-actions">
-                        <a href="#"
-                           data-theme-slug="<?php echo esc_attr($this->current_theme->get_template()); ?>"
-                           data-demo-version=""
-                           data-name="<?php echo esc_attr($this->current_theme->get('Name')); ?>"
-                           data-demo-url=""
-                           class="demo-contents--preview-theme-btn button button-primary"><?php _e('Start Import Demo', 'demo-contents'); ?></a>
-                    </div>
-                </div>
-                <?php
-            }
 
             // Listing installed themes
-            foreach (( array )$install_themes as $theme_slug => $theme) {
-                if (!$this->is_allowed_theme($theme->get('Author'))) {
-                    continue;
-                }
-                if ($current_theme_slug == $theme_slug) {
-                    continue; // already listed above
-                }
-                $number_theme++;
+            foreach (( array ) $this->items as $theme_slug => $theme ) {
+
                 ?>
-                <div class="theme" tabindex="0" aria-describedby="<?php echo esc_attr($theme_slug); ?>-action <?php echo esc_attr($theme_slug); ?>-name"
+                <div class="theme <?php echo  (  $theme['activate'] ) ? 'demo-contents--current-theme' : ''; ?>" tabindex="0" aria-describedby="<?php echo esc_attr($theme_slug); ?>-action <?php echo esc_attr($theme_slug); ?>-name"
                      data-slug="<?php echo esc_attr($theme_slug); ?>">
                     <div class="theme-screenshot">
-                        <img src="<?php echo esc_url($theme->get_screenshot()); ?>" alt="">
+                        <img src="<?php echo esc_url($theme['screenshot']); ?>" alt="">
                     </div>
-                    <a href="#" target="_blank" class="more-details"
-                       id="<?php echo esc_attr($theme_slug); ?>-action"><?php _e('Theme Details', 'demo-contents'); ?></a>
-                    <div class="theme-author"><?php sprintf(__('by %s', 'demo-contents'), $theme->get('Author')); ?></div>
-                    <h2 class="theme-name" id="<?php echo esc_attr($theme_slug); ?>-name"><?php echo esc_html($theme->get('Name')); ?></h2>
+                    <?php if ( $theme['activate'] ) { ?>
+                        <span class="more-details"><?php _e('Current Theme', 'demo-contents'); ?></span>
+                    <?php }else { ?>
+                        <span class="more-details"><?php _e('Theme Details', 'demo-contents'); ?></span>
+                    <?php } ?>
+
+                    <div class="theme-author"><?php sprintf(__('by %s', 'demo-contents'),$theme['author'] ); ?></div>
+                    <h2 class="theme-name" id="<?php echo esc_attr($theme_slug); ?>-name"><?php echo esc_html($theme['name']); ?></h2>
                     <div class="theme-actions">
                         <a
                             data-theme-slug="<?php echo esc_attr($theme_slug); ?>"
                             data-demo-version=""
-                            data-name="<?php echo esc_html($theme->get('Name')); ?>"
+                            data-name="<?php echo esc_html($theme['name']); ?>"
                             data-demo-url=""
                             class="demo-contents--preview-theme-btn button button-primary customize"
                             href="#"
@@ -376,11 +506,3 @@ class Demo_Content_Dashboard {
     }
 }
 
-new Demo_Content_Dashboard();
-
-
-
-
-
-//wp_remote_get( 'https://www.famethemes.com//wp-json/wp/v2/posts?filter[posts_per_page]=5' );
-//wp_remote_get( 'https://www.famethemes.com/wp-json/wp/v2/download/?per_page=100' );
