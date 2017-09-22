@@ -1,23 +1,11 @@
-var ft_import_running = false;
+var demo_contents_import_running = false;
+var demo_contents_iframe_running = false;
 window.onbeforeunload = function() {
-    if ( ft_import_running ) {
-        return FT_IMPORT_DEMO.confirm_leave;
+    if ( demo_contents_import_running ) {
+        return demo_contents_params.confirm_leave;
     }
 };
 
-
-function loading_icon(){
-    var frame = $( '<iframe style="display: none;"></iframe>' );
-    frame.appendTo('body');
-    // Thanks http://jsfiddle.net/KSXkS/1/
-    try { // simply checking may throw in ie8 under ssl or mismatched protocol
-        doc = frame[0].contentDocument ? frame[0].contentDocument : frame[0].document;
-    } catch(err) {
-        doc = frame[0].document;
-    }
-    doc.open();
-    doc.close();
-}
 
 
 // -------------------------------------------------------------------------------
@@ -32,7 +20,6 @@ var demo_contents_viewing_theme = window.demo_contents_viewing_theme || {};
         demo_contents_params.plugins.activate = {};
     }
     var $document = $( document );
-    var is_importing = false;
 
     /**
      * Function that loads the Mustache template
@@ -79,6 +66,28 @@ var demo_contents_viewing_theme = window.demo_contents_viewing_theme || {};
             activate: {}
         },
 
+        loading: function(){
+            demo_contents_import_running = true;
+            demo_contents_iframe_running = null;
+            $( '#demo_contents_iframe_running' ).remove();
+            var frame = $( '<iframe id="demo_contents_iframe_running" style="display: none;"></iframe>' );
+            frame.appendTo('body');
+            var doc;
+            // Thanks http://jsfiddle.net/KSXkS/1/
+            try { // simply checking may throw in ie8 under ssl or mismatched protocol
+                doc = frame[0].contentDocument ? frame[0].contentDocument : frame[0].document;
+            } catch(err) {
+                doc = frame[0].document;
+            }
+            doc.open();
+            // doc.close();
+        },
+
+        end_loading: function(){
+             $( '#demo_contents_iframe_running' ).remove();
+            demo_contents_import_running = false;
+        },
+
         loading_step: function( $element ){
             $element.removeClass( 'demo-contents--waiting demo-contents--running' );
             $element.addClass( 'demo-contents--running' );
@@ -123,9 +132,19 @@ var demo_contents_viewing_theme = window.demo_contents_viewing_theme || {};
                     $item.attr('data-plugin', $slug);
                 });
             } else {
-                // $list_install_plugins.hide();
+                $list_install_plugins.hide();
             }
 
+
+            if ( demo_contents_viewing_theme.activate) {
+                $( '.demo-contents--activate-notice' ).hide();
+            } else {
+                $( '.demo-contents-import-progress' ).hide();
+                $( '.demo-contents--activate-notice' ).show();
+
+                var activate_theme_btn =  $( '<a href="#" class="demo-contents--activate-now button button-primary">'+demo_contents_params.activate_theme+'</a>' );
+                $( '.demo-contents--import-now' ).replaceWith( activate_theme_btn );
+            }
 
         },
         installPlugins: function() {
@@ -253,19 +272,18 @@ var demo_contents_viewing_theme = window.demo_contents_viewing_theme || {};
                 type: 'GET',
                 dataType: 'json',
                 success: function( res ){
-
                     console.log( res );
                     if ( typeof complete_cb === 'function' ) {
                         complete_cb( res );
                     }
-                    console.log( 'Completed: ', doing );
+                    console.log( 'Completed: '+ doing, res );
                     $document.trigger( 'demo_contents_'+doing+'_completed' );
                 },
                 fail: function( res ){
                     if ( typeof fail_cb === 'function' ) {
                         fail_cb( res );
                     }
-                    console.log( 'Failed: ', doing );
+                    console.log( 'Failed: '+ doing, res );
                     $document.trigger( 'demo_contents_'+doing+'_failed' );
                     $document.trigger( 'demo_contents_ajax_failed', [ doing ] );
                 }
@@ -348,6 +366,7 @@ var demo_contents_viewing_theme = window.demo_contents_viewing_theme || {};
 
         done: function(){
             console.log( 'All done' );
+            this.end_loading();
             $( '.demo-contents--import-now' ).replaceWith( '<a href="'+demo_contents_params.home+'" class="button button-primary">'+demo_contents_params.btn_done_label+'</a>' );
         },
 
@@ -395,16 +414,8 @@ var demo_contents_viewing_theme = window.demo_contents_viewing_theme || {};
                 $( 'body' ).append( previewHtml );
                 $( 'body' ).addClass( 'demo-contents-body-viewing' );
 
-                if ( demo_contents_viewing_theme.activate) {
-                    $( '.demo-contents--activate-notice' ).hide();
-                    that.preparing_plugins();
-                } else {
-                    $( '.demo-contents-import-progress' ).hide();
-                    $( '.demo-contents--activate-notice' ).show();
 
-                    var activate_theme_btn =  $( '<a href="#" class="demo-contents--activate-now button button-primary">'+demo_contents_params.activate_theme+'</a>' );
-                    $( '.demo-contents--import-now' ).replaceWith( activate_theme_btn );
-                }
+                that.preparing_plugins();
 
                 $document.trigger( 'demo_contents_preview_opened' );
 
@@ -412,10 +423,43 @@ var demo_contents_viewing_theme = window.demo_contents_viewing_theme || {};
 
             $document.on( 'click', '.demo-contents-close', function( e ) {
                 e.preventDefault();
-                $( this ).closest('#demo-contents--preview').remove();
-                $( 'body' ).removeClass( 'demo-contents-body-viewing' );
+                if ( demo_contents_import_running ) {
+                    var c = confirm( demo_contents_params.confirm_leave ) ;
+                    if ( c ) {
+                        demo_contents_import_running = false;
+                        $( this ).closest('#demo-contents--preview').remove();
+                        $( 'body' ).removeClass( 'demo-contents-body-viewing' );
+                    }
+                } else {
+                    $( this ).closest('#demo-contents--preview').remove();
+                    $( 'body' ).removeClass( 'demo-contents-body-viewing' );
+                }
+
             } );
 
+        },
+
+        checking_resources: function(){
+            var that = this;
+            var button = $( '.demo-contents--import-now, .demo-contents--activate-now' );
+            button.html( demo_contents_params.checking_resource );
+            button.addClass( 'updating-message' );
+            button.addClass( 'disabled' );
+            that.ajax( 'checking_resources', function( res ){
+                if ( res.success ) {
+                    button.removeClass( 'disabled' );
+                    button.removeClass( 'updating-message' );
+                    if ( demo_contents_viewing_theme.activate ) {
+                        button.html( demo_contents_params.import_now );
+                    } else {
+                        button.html( demo_contents_params.activate_theme );
+                    }
+                } else {
+                    $( '.demo-contents--activate-notice' ).show().html( res.data );
+                    $( '.demo-contents-import-progress' ).hide();
+                    button.replaceWith( '<a href="#" class="demo-contents--no-data-btn button button-secondary disabled disable">'+demo_contents_params.import_now+'</a>' );
+                }
+            } );
         },
 
         init: function(){
@@ -425,6 +469,7 @@ var demo_contents_viewing_theme = window.demo_contents_viewing_theme || {};
             that.toggle_collapse();
 
             $document.on( 'demo_contents_ready', function(){
+                that.loading();
                 that.installPlugins();
             } );
 
@@ -472,9 +517,6 @@ var demo_contents_viewing_theme = window.demo_contents_viewing_theme || {};
                 that.failed();
             } );
 
-            if ( demo_contents_params.run == 'run' ) {
-                $document.trigger( 'demo_contents_ready' );
-            }
 
             // Toggle Heading
             $document.on( 'click', '.demo-contents--step', function( e ){
@@ -501,26 +543,30 @@ var demo_contents_viewing_theme = window.demo_contents_viewing_theme || {};
                     that.ajax( 'activate_theme', function( res ){
                         var new_btn = $( '<a href="#" class="updating-message button button-primary">' + demo_contents_params.checking_theme + '</a>' );
                         btn.replaceWith( new_btn );
+
+                        demo_contents_params.current_theme = demo_contents_viewing_theme.slug;
+                        demo_contents_params.current_child_theme =  demo_contents_viewing_theme.slug;
+
+                        demo_contents_viewing_theme = '';
                         $.get( demo_contents_params.theme_url, { __checking_plugins: 1 }, function( res ){
                             console.log( 'Checking plugin completed' );
                             new_btn.replaceWith('<a href="#" class="demo-contents--import-now button button-primary">' + demo_contents_params.import_now + '</a>');
                             if ( res.success ) {
                                 demo_contents_viewing_theme.activate = true;
                                 that.preparing_plugins( res.data );
-                                $( '.demo-contents--activate-notice' ).hide( 200 );
-                                $( '.demo-contents-import-progress' ).show(200);
-                                /// Activate success! Now Import content
-
+                                $( '.demo-contents--activate-notice' ).slideUp( 200 );
+                                $( '.demo-contents-import-progress' ).slideDown(200);
                             }
                         } );
-
 
                     } );
                 }
             } );
 
             $document.on( 'demo_contents_preview_opened', function(){
-               // $document.trigger( 'demo_contents_import_posts_completed' );
+              //  that.loading();
+                that.checking_resources();
+               // $document.trigger( 'demo_contents_import_widgets_completed' );
             } );
 
             //$( '.demo-contents--preview-theme-btn' ).eq( 0 ).click();

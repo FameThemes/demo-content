@@ -17,7 +17,6 @@ class  Demo_Contents_Progress {
     {
         add_action( 'admin_enqueue_scripts', array( $this, 'scripts' ) );
         add_action( 'wp_ajax_demo_contents__import', array( $this, 'ajax_import' ) );
-
         add_action( 'admin_enqueue_scripts', array( $this, 'checking_plugins' ), 900, 1 );
     }
 
@@ -49,12 +48,10 @@ class  Demo_Contents_Progress {
      */
     function ajax_import(){
 
-
-
         // Test Import theme Option only
 
-        $demo_config_file = DEMO_CONTENT_PATH.'demos/onepress/config.json';
-        $demo_xml_file = DEMO_CONTENT_PATH.'demos/onepress/dummy-data.xml';
+       // $demo_config_file = DEMO_CONTENT_PATH.'demos/onepress/config.json';
+       // $demo_xml_file = DEMO_CONTENT_PATH.'demos/onepress/dummy-data.xml';
 
         if ( ! class_exists( 'Merlin_WXR_Parser' ) ) {
             require DEMO_CONTENT_PATH. 'inc/merlin-wp/includes/class-merlin-xml-parser.php' ;
@@ -67,8 +64,7 @@ class  Demo_Contents_Progress {
         if ( ! current_user_can( 'import' ) ) {
             wp_send_json_error( __( "You have not permissions to import.", 'demo-contents' ) );
         }
-        $importer = new Merlin_Importer();
-        //$importer->import( $demo_xml_file );
+
         $doing = isset( $_REQUEST['doing'] ) ? sanitize_text_field( $_REQUEST['doing'] ) : '';
         if ( ! $doing ) {
             wp_send_json_error( __( "No actions to do", 'demo-contents' ) );
@@ -92,32 +88,56 @@ class  Demo_Contents_Progress {
             wp_send_json_error( __( 'This theme have not installed.', 'demo-contents' ) );
         }
 
-
         // if is_activate theme
         if ( $doing == 'activate_theme' ) {
             switch_theme( $current_theme_slug );
-            wp_send_json_success( array( 'msg' => sprintf( __( '%s theme activated', 'demo-contents' ), $themes[ $current_theme_slug ]->get("Name") ), 'plugins' => $plugins ) );
+            wp_send_json_success( array( 'msg' => sprintf( __( '%s theme activated', 'demo-contents' ), $themes[ $current_theme_slug ]->get("Name") ) ) );
         }
 
+        if ( $doing == 'checking_resources' ){
+            $file_data = $this->maybe_remote_download_data_files( $current_theme_slug,  $current_theme_demo_version );
+            if ( ! $file_data || empty( $file_data ) ) {
+                wp_send_json_error( sprintf( __( 'Demo data not found for %s', 'demo-contents' ) , $themes[ $current_theme_slug ]->get("Name") ) );
+            } else {
+                wp_send_json_success( __( 'Data ready.', 'demo-contents' ) );
+            }
+        }
 
-        wp_send_json_success(); // just for test
+        //wp_send_json_success(); // just for test
+       $file_data = $this->maybe_remote_download_data_files( $current_theme_slug,  $current_theme_demo_version );
+       if ( ! $file_data || empty( $file_data ) ) {
+           wp_send_json_error( array( 'type' => 'no-files', 'msg' => __( 'Dummy data files not found', 'demo-contents' ), 'files' => $file_data  ) );
+       }
+
+       $transient_key = '_demo_content_'.$current_theme_slug;
+       if ( $current_theme_demo_version ) {
+           $transient_key .= '-'.$current_theme_demo_version;
+       }
 
 
-
-        //$transient_key = 'ft_demo_xml_data'.$theme.$version;
-        //$content = get_transient( $transient_key );
-
-        $content = false;
+        $importer = new Merlin_Importer();
+        $content = get_transient( $transient_key );
         if ( ! $content ) {
             $parser = new Merlin_WXR_Parser();
-            $content = $parser->parse( $demo_xml_file );
-           // set_transient( $transient_key, $content, DAY_IN_SECONDS );
-        }
-        if ( is_wp_error( $content ) ) {
-            wp_send_json_success( 'no_demo_import' );
+            $content = $parser->parse( $file_data['xml'] );
+           set_transient( $transient_key, $content, DAY_IN_SECONDS );
         }
 
-        //$importer->importStart();
+        if ( is_wp_error( $content ) ) {
+            wp_send_json_error( __( 'Dummy content empty', 'demo-contents' ) );
+        }
+
+        // Setup config
+        $option_config = get_transient( $transient_key.'-json' );
+        if ( false === $option_config ) {
+            if ( file_exists( $file_data['xml']  ) ) {
+                global $wp_filesystem;
+                WP_Filesystem();
+                $file_contents = $wp_filesystem->get_contents( $file_data['json'] );
+                $option_config = json_decode( $file_contents, true );
+                set_transient( $transient_key.'-json',  $option_config, DAY_IN_SECONDS ) ;
+            }
+        }
 
         switch ( $doing ) {
             case 'import_users':
@@ -151,15 +171,10 @@ class  Demo_Contents_Progress {
                 break;
 
             case 'import_theme_options':
-                global $wp_filesystem;
-                WP_Filesystem();
-                $file_contents = $wp_filesystem->get_contents( $demo_config_file );
-                $option_config = json_decode( $file_contents, true );
-                $this->config_data = $option_config;
                 if ( isset( $option_config['options'] ) ){
                     $this->importOptions( $option_config['options'] );
                 }
-                print_r( $option_config['pages'] );
+                //print_r( $option_config['pages'] );
                 // Setup Pages
                 $processed_posts = get_transient('_wxr_imported_posts') ? : array();
                 if ( isset( $option_config['pages'] ) ){
@@ -169,14 +184,9 @@ class  Demo_Contents_Progress {
                     }
                 }
 
-
                 break;
 
             case 'import_widgets':
-                global $wp_filesystem;
-                WP_Filesystem();
-                $file_contents = $wp_filesystem->get_contents( $demo_config_file );
-                $option_config = json_decode( $file_contents, true );
                 $this->config_data = $option_config;
                 if ( isset( $option_config['widgets'] ) ){
                    // print_r( $option_config['widgets'] );
@@ -185,27 +195,24 @@ class  Demo_Contents_Progress {
                 break;
 
             case 'import_customize':
-                global $wp_filesystem;
-                WP_Filesystem();
-                $file_contents = $wp_filesystem->get_contents( $demo_config_file );
-                $option_config = json_decode( $file_contents, true );
-                $this->config_data = $option_config;
-                print_r( $option_config['theme_mods'] );
                 if ( isset( $option_config['theme_mods'] ) ){
-
                     $importer->importThemeOptions( $option_config['theme_mods'] );
                     if ( isset( $option_config['customizer_keys'] ) ) {
                         foreach ( ( array ) $option_config['customizer_keys'] as $k=> $list_key ) {
                             $this->resetup_repeater_page_ids( $k, $list_key );
                         }
                     }
-
                 }
 
                 $importer->importEnd();
+
+                wp_send_json_success( $file_data );
                 break;
 
-        }
+        } // end switch action
+
+        wp_send_json_success( );
+
     }
 
 
@@ -281,6 +288,8 @@ class  Demo_Contents_Progress {
             'import_now'            => __( 'Import Now', 'demo-contents' ),
             'activate_theme'        => __( 'Activate Now', 'demo-contents' ),
             'checking_theme'        => __( 'Checking theme', 'demo-contents' ),
+            'checking_resource'        => __( 'Checking resource', 'demo-contents' ),
+            'confirm_leave'         => __( 'Importing demo content..., are you sure want to cancel ?', 'demo-contents' ),
             'installed_themes'      => $themes,
             'current_theme'         => $template_slug,
             'current_child_theme'   => $theme_slug,
@@ -420,11 +429,8 @@ class  Demo_Contents_Progress {
                     }
 
                 }
-
-
             }
         }
-
 
         if ( $option_type == 'option' ) {
             update_option( $theme_mod_name , $data );
@@ -432,6 +438,66 @@ class  Demo_Contents_Progress {
             set_theme_mod( $theme_mod_name , $data );
         }
 
+    }
+
+
+    function maybe_remote_download_data_files( $theme_name, $demo_version = '' ) {
+        if ( ! $theme_name ) {
+            return false;
+        }
+
+        $sub_path = $theme_name;
+        if ( $demo_version ) {
+            $sub_path .= '/'.$demo_version;
+        }
+        $prefix_name = str_replace( '/', '-', $sub_path );
+
+        $xml_file_name =  $prefix_name .'-dummy-data.xml' ;
+        $config_file_name = $prefix_name .'-config.json';
+
+        $xml_file = false;
+        $config_file = false;
+
+        $files_data = get_transient( '_demo_contents_file_'.$prefix_name );
+
+        // If have cache
+        if ( ! empty( $files_data ) ) {
+            $files_data = wp_parse_args( $files_data, array( 'xml' => '', 'json' => '' ) );
+            $xml_file = get_attached_file( $files_data['xml'] );
+            $config_file = get_attached_file( $files_data['json']  );
+            if ( ! empty( $xml_file ) ) {
+                return  array( 'xml' => $xml_file, 'json' => $config_file );
+            }
+        }
+
+        $remote_folder = apply_filters( 'demo_contents_remote_demo_data_folder_url', false );
+
+        if ( ! $remote_folder ) {
+            $repo = apply_filters( 'demo_contents_github_repo', Demo_Contents::$git_repo );
+            $remote_folder = 'https://raw.githubusercontent.com/'.$repo.'/master/';
+        }
+        $remote_folder = trailingslashit( $remote_folder );
+
+       /// echo $remote_folder.$sub_path.'/dummy-data.xml';
+
+        $xml_id = Demo_Contents::download_file( $remote_folder.$sub_path.'/dummy-data.xml',  $xml_file_name );
+        if ( $xml_id ) {
+            set_transient( '_demo_contents_file_'.$xml_file_name,  $xml_id , DAY_IN_SECONDS );
+            $xml_file = get_attached_file( $xml_id );
+        }
+
+        $config_id = Demo_Contents::download_file( $remote_folder.$sub_path.'/config.json',  $config_file_name );
+        if ( $config_id ) {
+            set_transient( '_demo_contents_file_'.$config_file_name,  $config_id , DAY_IN_SECONDS );
+            $config_file = get_attached_file( $config_id );
+        }
+
+        if ( ! empty( $xml_file ) ) {
+            set_transient( '_demo_contents_file_'.$prefix_name, array( 'xml' => $xml_id, 'json' => $config_id ) );
+            return  array( 'xml' => $xml_file, 'json' => $config_file );
+        }
+
+        return false;
 
     }
 

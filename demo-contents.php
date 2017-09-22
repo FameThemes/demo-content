@@ -19,39 +19,22 @@ define( 'DEMO_CONTENT_PATH', trailingslashit( plugin_dir_path( __FILE__) ) );
 class Demo_Contents {
     public $dir;
     public $url;
-    public $git_repo = 'https://raw.githubusercontent.com/FameThemes/famethemes-xml-demos/master/';
+    static $git_repo = 'FameThemes/famethemes-xml-demos';
     function __construct( ){
 
         $this->url = trailingslashit( plugins_url('', __FILE__) );
         $this->dir = trailingslashit( plugin_dir_path( __FILE__) );
-
-        //require_once $this->dir.'inc/class-demo-content.php';
 
         include dirname( __FILE__ ).'/inc/class-dashboard.php';
 
         // Example config plugins
         require_once $this->dir.'inc/class-tgm-plugin-activation.php';
         require_once $this->dir.'/sample/example.php';
-
-
         require_once $this->dir.'inc/class-progress.php';
 
-       // add_action( 'wp_ajax_demo_contents__import_content', array( $this, 'ajax_import' ) );
-       // add_action( 'wp_ajax_demo_contents__import_download', array( $this, 'ajax_download' ) );
-
-        add_action( 'wp_ajax_ft_demo_export', array( $this, 'ajax_export' ) );
-
-        $template_slug = get_option( 'template' );
-        $theme_slug = get_option( 'stylesheet' );
-
-        // child theme active
-        if ( $template_slug != $theme_slug ) {
-           // add_action( $template_slug.'_demo_import_content_tab', array( $this, 'display_import' ) );
-        } else {
-           // add_action( $theme_slug.'_demo_import_content_tab', array( $this, 'display_import' ) );
-        }
-
-        add_action( 'customize_controls_print_footer_scripts', array( $this, 'update_customizer_keys' ) );
+        // add_action( 'wp_ajax_demo_contents__import_content', array( $this, 'ajax_import' ) );
+        // add_action( 'wp_ajax_demo_contents__import_download', array( $this, 'ajax_download' ) );
+        //add_action( 'wp_ajax_ft_demo_export', array( $this, 'ajax_export' ) );
 
     }
 
@@ -139,6 +122,8 @@ class Demo_Contents {
 
         if ( $name ) {
             $file_array['name'] = $name;
+        } else {
+            $file_array['name'] = basename( $url );
         }
         // Do the validation and storage stuff.
         $file_path_or_id = self::media_handle_sideload( $file_array, 0, null, array(), $save_attachment );
@@ -148,56 +133,9 @@ class Demo_Contents {
             @unlink( $file_array['tmp_name'] );
             return false;
         }
-
         return $file_path_or_id;
     }
 
-    function download_dummy_files( $item_name ){
-        $files = array(
-            'dummy-data'    => 'xml', // file ext
-            'config'        => 'json'
-        );
-        $downloaded_file = array();
-        foreach ( $files as $k => $ext ) {
-            $file = $item_name.'-'.$k.'.'.$ext;
-            $file_path = self::download_file( $this->git_repo.$item_name.'/'.$k.'.'.$ext, $file, false );
-            $downloaded_file[ $k ] = $file_path;
-        }
-
-        return $downloaded_file;
-    }
-
-
-
-    function data_dir( $param ){
-
-        $siteurl = get_option( 'siteurl' );
-        $upload_path = trim( get_option( 'upload_path' ) );
-
-        if ( empty( $upload_path ) || 'wp-content/uploads' == $upload_path ) {
-            $dir = WP_CONTENT_DIR . '/uploads';
-        } elseif ( 0 !== strpos( $upload_path, ABSPATH ) ) {
-            // $dir is absolute, $upload_path is (maybe) relative to ABSPATH
-            $dir = path_join( ABSPATH, $upload_path );
-        } else {
-            $dir = $upload_path;
-        }
-
-        if ( !$url = get_option( 'upload_url_path' ) ) {
-            if ( empty($upload_path) || ( 'wp-content/uploads' == $upload_path ) || ( $upload_path == $dir ) )
-                $url = WP_CONTENT_URL . '/uploads';
-            else
-                $url = trailingslashit( $siteurl ) . $upload_path;
-        }
-
-
-        $param['path']  = $dir . '/ft-dummy-data';
-        $param['url']   = $url . '/ft-dummy-data';
-
-        return $param;
-    }
-
-    
     function ajax_export(){
         $type = $_REQUEST['type'];
         ob_start();
