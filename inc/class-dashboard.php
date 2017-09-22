@@ -151,6 +151,11 @@ class Demo_Content_Dashboard {
                         <# if ( data.img ) { #>
                             <div class="demo-contents--theme-thumbnail">{{{ data.img }}}</div>
                         <# } #>
+
+                        <div class="demo-contents--activate-notice">
+                            <?php _e( 'Your must activate this theme before import demo content', 'demo-contents' ); ?>
+                        </div>
+
                         <div class="demo-contents-import-progress">
 
                             <div class="demo-contents--step demo-contents-install-plugins demo-contents--waiting">

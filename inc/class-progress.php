@@ -11,19 +11,45 @@ class  Demo_Contents_Progress {
 
 
     private $config_data= array();
+    private $tgmpa;
 
     function __construct()
     {
         add_action( 'admin_enqueue_scripts', array( $this, 'scripts' ) );
         add_action( 'wp_ajax_demo_contents__import', array( $this, 'ajax_import' ) );
+
+        add_action( 'admin_enqueue_scripts', array( $this, 'checking_plugins' ), 900, 1 );
     }
+
+    function checking_plugins( $hook ) {
+
+        if( $hook != 'themes.php' ) {
+            return;
+        }
+        if ( ! isset( $_REQUEST['__checking_plugins'] ) ) {
+            return;
+        }
+
+        $plugins = array();
+        $this->get_tgmpa();
+        if ( ! empty( $this->tgmpa ) ) {
+            $plugins = $this->get_tgmpa_plugins();
+        }
+        ob_clean();
+        ob_flush();
+
+        ob_start();
+        wp_send_json_success( $plugins );
+        die();
+    }
+
 
     /**
      * @see https://github.com/devinsays/edd-theme-updater/blob/master/updater/theme-updater.php
      */
     function ajax_import(){
 
-        wp_send_json_success(); // just for test
+
 
         // Test Import theme Option only
 
@@ -48,14 +74,40 @@ class  Demo_Contents_Progress {
             wp_send_json_error( __( "No actions to do", 'demo-contents' ) );
         }
 
-        $theme      =  isset( $_REQUEST['theme'] ) ? sanitize_text_field( $_REQUEST['theme'] ) : ''; // Theme to import
-        $version    =  isset( $_REQUEST['version'] ) ? sanitize_text_field( $_REQUEST['version'] ) : ''; // demo version
+        // Current theme for import
+        $current_theme = isset( $_REQUEST['current_theme'] ) ? $_REQUEST['current_theme'] : false;
+        $current_theme_slug = false;
+        $current_theme_demo_version = false;
+        if ( ! $current_theme || ! is_array( $current_theme ) || ! isset( $current_theme['slug'] ) || ! $current_theme['slug'] ) {
+            wp_send_json_error( __( 'Not theme selected', 'demo-contents' ) );
+        }
+
+        $current_theme_slug = sanitize_text_field( $current_theme['slug'] );
+        if ( $current_theme['demo_version'] ) {
+            $current_theme_demo_version = sanitize_text_field( $current_theme['demo_version'] );
+        }
+
+        $themes = wp_get_themes();
+        if ( ! isset( $themes[ $current_theme_slug ] ) ) {
+            wp_send_json_error( __( 'This theme have not installed.', 'demo-contents' ) );
+        }
+
+
+        // if is_activate theme
+        if ( $doing == 'activate_theme' ) {
+            switch_theme( $current_theme_slug );
+            wp_send_json_success( array( 'msg' => sprintf( __( '%s theme activated', 'demo-contents' ), $themes[ $current_theme_slug ]->get("Name") ), 'plugins' => $plugins ) );
+        }
+
+
+        wp_send_json_success(); // just for test
+
+
 
         //$transient_key = 'ft_demo_xml_data'.$theme.$version;
         //$content = get_transient( $transient_key );
 
         $content = false;
-
         if ( ! $content ) {
             $parser = new Merlin_WXR_Parser();
             $content = $parser->parse( $demo_xml_file );
@@ -166,6 +218,16 @@ class  Demo_Contents_Progress {
         }
     }
 
+    private function get_tgmpa(){
+        if ( empty( $this->tgmpa ) ) {
+            if ( class_exists( 'TGM_Plugin_Activation' ) ) {
+                $this->tgmpa = isset($GLOBALS['tgmpa']) ? $GLOBALS['tgmpa'] : TGM_Plugin_Activation::get_instance();
+            }
+        }
+        return $this->tgmpa;
+    }
+
+
     function scripts(){
         wp_enqueue_style( 'demo-contents', DEMO_CONTENT_URL . 'style.css', false );
 
@@ -183,10 +245,10 @@ class  Demo_Contents_Progress {
         $tgm_url = '';
         // Localize the javascript.
         $plugins = array();
-        if ( class_exists( 'TGM_Plugin_Activation' ) ) {
-            $this->tgmpa = isset($GLOBALS['tgmpa']) ? $GLOBALS['tgmpa'] : TGM_Plugin_Activation::get_instance();
-            $plugins = $this->get_tgmpa_plugins();
+        $this->get_tgmpa();
+        if ( ! empty( $this->tgmpa ) ) {
             $tgm_url = $this->tgmpa->get_tgmpa_url();
+            $plugins = $this->get_tgmpa_plugins();
         }
 
         $template_slug  = get_option( 'template' );
@@ -207,6 +269,7 @@ class  Demo_Contents_Progress {
             ),
             'tgm_bulk_url' 		    => $tgm_url,
             'ajaxurl'      		    => admin_url( 'admin-ajax.php' ),
+            'theme_url'      		=> admin_url( 'themes.php' ),
             'wpnonce'      		    => wp_create_nonce( 'merlin_nonce' ),
             'action_install_plugin' => 'tgmpa-bulk-activate',
             'action_active_plugin'  => 'tgmpa-bulk-activate',
@@ -215,7 +278,13 @@ class  Demo_Contents_Progress {
             'home'                  => home_url('/'),
             'btn_done_label'        => __( 'All Done! View Site', 'demo-contents' ),
             'failed_msg'            => __( 'Import Failed!', 'demo-contents' ),
-            'installed_themes'      => $themes
+            'import_now'            => __( 'Import Now', 'demo-contents' ),
+            'activate_theme'        => __( 'Activate Now', 'demo-contents' ),
+            'checking_theme'        => __( 'Checking theme', 'demo-contents' ),
+            'installed_themes'      => $themes,
+            'current_theme'         => $template_slug,
+            'current_child_theme'   => $theme_slug,
+
         ) );
 
     }
@@ -226,6 +295,10 @@ class  Demo_Contents_Progress {
      * @return    array
      */
     protected function get_tgmpa_plugins() {
+        $this->get_tgmpa();
+        if ( empty( $this->tgmpa ) ) {
+            return array();
+        }
         $plugins  = array(
             'all'      => array(), // Meaning: all plugins which still have open actions.
             'install'  => array(),
