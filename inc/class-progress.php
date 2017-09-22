@@ -109,7 +109,7 @@ class  Demo_Contents_Progress {
             if ( ! $file_data || empty( $file_data ) ) {
                 wp_send_json_error( sprintf( __( 'Demo data not found for <strong>%s</strong>. However you can import demo content by upload your demo files below.', 'demo-contents' ) , $themes[ $current_theme_slug ]->get("Name") ) );
             } else {
-                wp_send_json_success( __( 'Data ready.', 'demo-contents' ) );
+                wp_send_json_success( __( 'Demo data ready for import.', 'demo-contents' ) );
             }
         }
 

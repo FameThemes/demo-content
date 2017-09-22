@@ -85,44 +85,7 @@ class Demo_Content_Dashboard {
         return $check->exists();
     }
 
-    function setup_themes(){
-        $this->current_theme = wp_get_theme();
-        $current_child_slug = $this->current_theme->get_stylesheet();
-        $current_parent_slug = $this->current_theme->get_template();
 
-
-        /*
-        $items = $this->get_items();
-        $current_slug = $current_parent_slug;
-        if ( isset( $this->items[ $current_child_slug ] ) ) {
-            $current_slug = $this->items[ $current_child_slug ];
-        }
-
-        $installed_items = array();
-        $not_installed_items = array();
-
-        foreach ( $items as $item ) {
-            $slug = $item['slug'];
-            if ( isset( $this->config_slugs[ $slug  ] ) ) {
-                $slug = $this->config_slugs[ $slug  ];
-            }
-            if ( $current_slug == $slug ) {
-                $item['__is_current'] = true;
-            } else {
-                $item['__is_current'] = false;
-            }
-            $item['__is_installed'] = $this->is_installed( $slug );
-            if ( $item['__is_installed'] ) {
-                $installed_items[ $slug ] = $item;
-            } else {
-                $not_installed_items[ $slug ] = $item;
-            }
-        }
-
-        $new_items =  array_merge( $installed_items, $not_installed_items );
-        $this->items = $new_items;
-        */
-    }
 
     function  preview_template(){
         ?>
@@ -197,13 +160,13 @@ class Demo_Content_Dashboard {
                             </div>
 
                             <div class="demo-contents--step  demo-contents-import-posts demo-contents--waiting">
-                                <div class="demo-contents--step-heading"><?php _e( 'Import Posts', 'demo-contents' ); ?></div>
+                                <div class="demo-contents--step-heading"><?php _e( 'Import Posts & Media', 'demo-contents' ); ?></div>
                                 <div class="demo-contents--status demo-contents--waiting"></div>
                                 <div class="demo-contents--child-steps"></div>
                             </div>
 
                             <div class="demo-contents--step demo-contents-import-theme-options demo-contents--waiting">
-                                <div class="demo-contents--step-heading"><?php _e( 'Import theme Options', 'demo-contents' ); ?></div>
+                                <div class="demo-contents--step-heading"><?php _e( 'Import Options', 'demo-contents' ); ?></div>
                                 <div class="demo-contents--status demo-contents--waiting"></div>
                                 <div class="demo-contents--child-steps"></div>
                             </div>
@@ -215,7 +178,7 @@ class Demo_Content_Dashboard {
                             </div>
 
                             <div class="demo-contents--step  demo-contents-import-customize demo-contents--waiting">
-                                <div class="demo-contents--step-heading"><?php _e( 'Import Customize', 'demo-contents' ) ?></div>
+                                <div class="demo-contents--step-heading"><?php _e( 'Import Customize Settings', 'demo-contents' ) ?></div>
                                 <div class="demo-contents--status demo-contents--waiting"></div>
                                 <div class="demo-contents--child-steps"></div>
                             </div>
@@ -239,6 +202,65 @@ class Demo_Content_Dashboard {
     function get_details_link( $theme_slug, $theme_name ) {
         $link = 'https://www.famethemes.com/themes/'.$theme_slug.'/';
         return apply_filters( 'demo_contents_get_details_link', $link, $theme_slug, $theme_name );
+    }
+
+    function setup_themes(){
+        $this->current_theme = wp_get_theme();
+
+        $current_theme = get_option( 'template' );
+        $child_theme    = get_option( 'stylesheet' );
+
+        $installed_themes = wp_get_themes();
+        $list_themes = array();
+
+
+        // Listing installed themes
+        foreach (( array )$installed_themes as $theme_slug => $theme) {
+            if (!$this->is_allowed_theme($theme->get('Author'))) {
+                continue;
+            }
+
+            $list_themes[ $theme_slug ] = array(
+                'slug'          => $theme_slug,
+                'name'          => $theme->get('Name'),
+                'screenshot'    => $theme->get_screenshot(),
+                'author'        => $theme->get('Author')
+            );
+            
+        }
+
+
+        /*
+        $items = $this->get_items();
+        $current_slug = $current_parent_slug;
+        if ( isset( $this->items[ $current_child_slug ] ) ) {
+            $current_slug = $this->items[ $current_child_slug ];
+        }
+
+        $installed_items = array();
+        $not_installed_items = array();
+
+        foreach ( $items as $item ) {
+            $slug = $item['slug'];
+            if ( isset( $this->config_slugs[ $slug  ] ) ) {
+                $slug = $this->config_slugs[ $slug  ];
+            }
+            if ( $current_slug == $slug ) {
+                $item['__is_current'] = true;
+            } else {
+                $item['__is_current'] = false;
+            }
+            $item['__is_installed'] = $this->is_installed( $slug );
+            if ( $item['__is_installed'] ) {
+                $installed_items[ $slug ] = $item;
+            } else {
+                $not_installed_items[ $slug ] = $item;
+            }
+        }
+
+        $new_items =  array_merge( $installed_items, $not_installed_items );
+        $this->items = $new_items;
+        */
     }
 
     function dashboard() {
@@ -300,7 +322,7 @@ class Demo_Content_Dashboard {
                     <div class="theme-screenshot">
                         <img src="<?php echo esc_url($theme->get_screenshot()); ?>" alt="">
                     </div>
-                    <a href="<?php echo esc_url($this->get_details_link($theme_slug, $theme->get('Name'))); ?>" target="_blank" class="more-details"
+                    <a href="#" target="_blank" class="more-details"
                        id="<?php echo esc_attr($theme_slug); ?>-action"><?php _e('Theme Details', 'demo-contents'); ?></a>
                     <div class="theme-author"><?php sprintf(__('by %s', 'demo-contents'), $theme->get('Author')); ?></div>
                     <h2 class="theme-name" id="<?php echo esc_attr($theme_slug); ?>-name"><?php echo esc_html($theme->get('Name')); ?></h2>
@@ -332,14 +354,20 @@ class Demo_Content_Dashboard {
                 </div>
                 <ul class="filter-links">
                     <li><a href="<?php echo $link_all; ?>" class="<?php echo ( ! $tab ) ? 'current' : ''; ?>"><?php _e( 'All Demos', 'demo-contents' ); ?></a></li>
-                    <li><a href="<?php echo $link_export; ?>"  class="<?php echo ( $tab == 'export' ) ? 'current' : ''; ?>"><?php _e( 'Export', 'demo-contents' ); ?></a></li>
                 </ul>
-                <form class="search-form"><label class="screen-reader-text" for="wp-filter-search-input"><?php _e( 'Search Demos', 'demo-contents' ); ?></label><input placeholder="Search themes..." aria-describedby="live-search-desc" id="wp-filter-search-input" class="wp-filter-search" type="search"></form>
             </div>
             <div class="theme-browser rendered">
                 <div class="themes wp-clearfix">
                     <?php
-                    echo $list_themes;
+                    if ( $number_theme > 0 ) {
+                        echo $list_themes;
+                    } else {
+                        ?>
+                        <div class="demo-contents-no-themes">
+                            <?php _e( 'No Themes Found', 'demo-contents' ); ?>
+                        </div>
+                        <?php
+                    }
                     ?>
                 </div><!-- /.Themes -->
             </div><!-- /.theme-browser -->

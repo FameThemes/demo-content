@@ -32,9 +32,15 @@ class Demo_Contents {
         require_once $this->dir.'/sample/example.php';
         require_once $this->dir.'inc/class-progress.php';
 
-        // add_action( 'wp_ajax_demo_contents__import_content', array( $this, 'ajax_import' ) );
-        // add_action( 'wp_ajax_demo_contents__import_download', array( $this, 'ajax_download' ) );
-        //add_action( 'wp_ajax_ft_demo_export', array( $this, 'ajax_export' ) );
+        $current_item = apply_filters( 'ft_demo_import_current_item',  false );
+
+        if ( ! $current_item ) {
+            $current_item = get_option( 'template' );
+            $current_item = untrailingslashit( $current_item );
+        }
+
+        $current_item_name = str_replace( array( '-', '_' ), ' ', $current_item );
+        $current_item_name = ucwords( $current_item_name );
 
     }
 

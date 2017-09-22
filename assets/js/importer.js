@@ -381,9 +381,10 @@ var demo_contents_viewing_theme = window.demo_contents_viewing_theme || {};
 
         preview: function(){
             var that = this;
-            $document .on( 'click', '.demo-contents--preview-theme-btn', function( e ){
+            $document .on( 'click', '.demo-contents .themes .theme', function( e ){
                 e.preventDefault();
-                var btn              = $( this );
+                var t               = $( this );
+                var btn             = $( '.demo-contents--preview-theme-btn', t );
                 var theme           = btn.closest('.theme');
                 var demoURL         = btn.attr( 'data-demo-url' ) || '';
                 var slug            = btn.attr( 'data-theme-slug' ) || '';
@@ -534,8 +535,8 @@ var demo_contents_viewing_theme = window.demo_contents_viewing_theme || {};
                     $( this ).addClass( 'updating-message' );
                     $document.trigger( 'demo_contents_ready' );
                 }
-
             } );
+
 
             // Activate Theme Click
             $document.on( 'click', '.demo-contents--activate-now', function( e ) {
@@ -631,12 +632,7 @@ var demo_contents_viewing_theme = window.demo_contents_viewing_theme || {};
 
             });
 
-
-
             // END Custom upload demo file
-
-
-
 
 
 
