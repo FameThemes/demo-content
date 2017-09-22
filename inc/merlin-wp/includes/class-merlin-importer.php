@@ -536,6 +536,11 @@ class Merlin_Importer {
                     }
                 }
 
+                if ( 'custom_logo' == $mod_key ) {
+                    $processed_posts = get_transient('_wxr_imported_posts') ? : array();
+                    $mod_value = isset( $processed_posts[ $mod_value ] ) ? $processed_posts[ $mod_value ] : $mod_value;
+                }
+
                 set_theme_mod($mod_key, $mod_value);
             }
         }
